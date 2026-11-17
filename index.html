@@ -2,433 +2,906 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>공룡 파크</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>디노 파크</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
 <style>
+  /* 세로형 모바일 게임 화면. 하나의 가로 맵(입구 → 공룡 우리들)을 한 화면씩 넘겨 본다. */
   :root {
-    --bg: #fdf6e3;
-    --panel: #ffffff;
-    --ink: #3b2f22;
-    --muted: #8a7a66;
-    --accent: #e8833a;
-    --accent-ink: #ffffff;
-    --good: #4caf50;
-    --warn: #f2b134;
-    --bad: #e05545;
-    --line: #eadfca;
-    --grass1: #9fd36b;
-    --grass2: #7cbf4f;
+    --ink: #3a2c1c;
+    --paper: #fffaf0;
+    --wood: #9b6634;
+    --wood-dark: #6f4521;
+    --coin: #ffc93c;
+    --coin-dark: #d99a12;
+    --grass: #7cc35f;
+    --grass-dark: #5fa847;
+    --path: #c8c0ae;
+    --path-edge: #9d9584;
+    --ivory: #f7efdc;
+    --bone-line: #6b5a3e;
+    --red: #e2533f;
+    --teal: #2f8f8a;
+    --outside: #1d3b3a;
+    --font: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    color-scheme: light;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #1f1b16; --panel: #2b251e; --ink: #f3ead9; --muted: #b3a48d;
-      --line: #43392d; --grass1: #4f7a34; --grass2: #3d6327; color-scheme: dark;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #1f1b16; --panel: #2b251e; --ink: #f3ead9; --muted: #b3a48d;
-    --line: #43392d; --grass1: #4f7a34; --grass2: #3d6327; color-scheme: dark;
-  }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; }
   body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-    -webkit-user-select: none; user-select: none;
+    background: var(--outside); color: var(--ink); font-family: var(--font);
+    -webkit-user-select: none; user-select: none; overflow: hidden;
   }
-  header {
-    display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center;
-    padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel);
-  }
-  header h1 { font-size: 20px; margin: 0 auto 0 0; }
-  .stat { font-weight: 700; font-size: 15px; white-space: nowrap; }
-  .stat small { color: var(--muted); font-weight: 500; }
-  main {
-    display: grid; grid-template-columns: 1fr 300px; gap: 16px; padding: 16px;
-    max-width: 1200px; margin: 0 auto;
-  }
-  @media (max-width: 820px) { main { grid-template-columns: 1fr; } }
+  button { font-family: var(--font); cursor: pointer; }
+  button:focus-visible, .booth:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
-  #park {
-    position: relative; height: 520px; border-radius: 18px; overflow: hidden;
+  #app {
+    position: relative; height: 100%; width: min(100vw, 440px); margin: 0 auto;
+    overflow: hidden; background: var(--grass); box-shadow: 0 0 40px rgba(0,0,0,.4);
+  }
+
+  /* ---------- HUD ---------- */
+  .hud {
+    position: absolute; z-index: 30; left: 0; right: 0; top: 0;
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px));
+    pointer-events: none;
+  }
+  .hud > * { pointer-events: auto; }
+  .pill {
+    display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px 0 6px;
+    background: rgba(30,40,40,.55); color: #fff; border-radius: 18px; font-size: 18px;
+    text-shadow: 0 2px 0 rgba(0,0,0,.35); font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .pill .ic { font-size: 22px; }
+  .badge {
+    width: 46px; height: 46px; border-radius: 50%; background: #4a7fc1; border: 3px solid #fff;
+    display: grid; place-items: center; color: #fff; font-size: 15px; line-height: 1; text-align: center;
+    box-shadow: 0 3px 0 rgba(0,0,0,.25);
+  }
+  .badge small { display: block; font-size: 10px; opacity: .9; }
+  .hud .spacer { flex: 1; }
+  .gear {
+    width: 40px; height: 40px; border: 0; border-radius: 12px; background: rgba(30,40,40,.55);
+    color: #fff; font-size: 22px;
+  }
+  #coinPill { background: linear-gradient(#5b4318, #3d2c10); }
+  #coinPill.pop { animation: pop .3s; }
+  @keyframes pop { 50% { transform: scale(1.12); } }
+
+  /* ---------- 오른쪽 버튼 ---------- */
+  .side {
+    position: absolute; z-index: 30; right: max(10px, env(safe-area-inset-right, 0px)); top: 70px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .side button {
+    position: relative; width: 62px; height: 62px; border: 0; border-radius: 16px;
+    background: #fff; box-shadow: 0 4px 0 #c9bfa8; font-size: 28px; line-height: 1;
+    display: grid; place-items: center; padding: 4px 0 0;
+  }
+  .side button span { font-size: 11px; color: var(--ink); }
+  .side button:active { transform: translateY(3px); box-shadow: 0 1px 0 #c9bfa8; }
+  .alert {
+    position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--red); color: #fff; font-size: 15px; display: grid; place-items: center;
+    border: 2px solid #fff;
+  }
+
+  /* ---------- 가로 맵 ---------- */
+  .world {
+    position: absolute; inset: 0; display: flex; overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain;
+  }
+  .world::-webkit-scrollbar { display: none; }
+  .panel {
+    position: relative; flex: 0 0 100%; height: 100%; scroll-snap-align: start; overflow: hidden;
+  }
+
+  .nav {
+    position: absolute; z-index: 25; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0;
+    display: flex; justify-content: center; gap: 6px; pointer-events: none;
+  }
+  .nav button {
+    pointer-events: auto; width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff;
+    background: rgba(30,40,40,.45); color: #fff; font-size: 14px; padding: 0; position: relative;
+  }
+  .nav button.on { background: var(--coin); border-color: #fff; transform: scale(1.12); }
+  .nav button .dot-alert {
+    position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--red); border: 2px solid #fff;
+  }
+  .arrow {
+    position: absolute; z-index: 24; top: 50%; width: 34px; height: 54px; border: 0;
+    background: rgba(30,40,40,.35); color: #fff; font-size: 22px; translate: 0 -50%;
+  }
+  .arrow.l { left: 0; border-radius: 0 14px 14px 0; }
+  .arrow.r { right: 0; border-radius: 14px 0 0 14px; }
+
+  /* ---------- 입구 ---------- */
+  .entrance { background:
+      radial-gradient(circle at 15% 70%, rgba(255,255,255,.08) 0 40px, transparent 41px),
+      radial-gradient(circle at 85% 40%, rgba(255,255,255,.08) 0 50px, transparent 51px),
+      var(--grass); }
+  .path-v {
+    position: absolute; left: 24%; right: 24%; top: 0; bottom: 10%;
+    background: var(--path); border-left: 8px solid var(--path-edge); border-right: 8px solid var(--path-edge);
+    background-image: repeating-linear-gradient(0deg, transparent 0 46px, rgba(0,0,0,.05) 46px 48px);
+  }
+  .path-h {
+    position: absolute; left: 0; right: 0; bottom: 10%; height: 13%;
+    background: var(--path); border-top: 8px solid var(--path-edge); border-bottom: 8px solid var(--path-edge);
+  }
+  .path-h::before { /* 세로길과 가로길이 만나는 부분 */
+    content: ""; position: absolute; left: 24%; right: 24%; top: -8px; height: 8px; background: var(--path);
+  }
+  .hedge {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 10%;
     background:
-      radial-gradient(circle at 20% 30%, rgba(255,255,255,.12) 0 60px, transparent 61px),
-      radial-gradient(circle at 75% 70%, rgba(255,255,255,.10) 0 80px, transparent 81px),
-      linear-gradient(180deg, var(--grass1), var(--grass2));
-    border: 6px solid #8b5e34; box-shadow: inset 0 0 0 3px #b07a45;
+      radial-gradient(circle at 12px 14px, #4f9a3a 0 14px, transparent 15px) 0 0 / 28px 28px repeat-x,
+      radial-gradient(circle at 6px 22px, #64b24b 0 12px, transparent 13px) 0 0 / 28px 28px repeat-x,
+      #4a8f36;
   }
-  @media (max-width: 820px) { #park { height: 420px; } }
-  .deco { position: absolute; font-size: 34px; pointer-events: none; opacity: .9; }
-  .pond {
-    position: absolute; left: 58%; top: 8%; width: 130px; height: 70px; border-radius: 50%;
-    background: radial-gradient(ellipse at 40% 40%, #8fd3ff, #3a9ad9); opacity: .85;
+  .tree { position: absolute; width: 74px; height: 84px; translate: -50% -100%; pointer-events: none; }
+  .tree::after { /* 나무 기둥 */
+    content: ""; position: absolute; left: 50%; bottom: 0; width: 16px; height: 22px; translate: -50% 0;
+    background: #8a5a2e; border-radius: 0 0 6px 6px;
   }
+  .tree::before { /* 나뭇잎 */
+    content: ""; position: absolute; left: 0; right: 0; top: 0; height: 66px; z-index: 1; border-radius: 46% 54% 48% 52%;
+    background:
+      radial-gradient(circle at 30% 30%, #9fdc78 0 14px, transparent 15px),
+      radial-gradient(circle at 70% 45%, #74bf55 0 18px, transparent 19px),
+      #5fae44;
+    box-shadow: 0 8px 0 #3f8a32, 6px 14px 16px rgba(0,0,0,.18);
+  }
+  .tree.s { transform: scale(.78); transform-origin: 50% 100%; }
 
+  .gate { position: absolute; left: 50%; top: calc(46px + 3%); width: 82%; height: 26%; translate: -50% 0; z-index: 6; pointer-events: none; }
+  .gate .pillar {
+    position: absolute; bottom: 0; width: 34px; height: 76%; background: var(--ivory);
+    border: 4px solid var(--bone-line); border-radius: 14px;
+  }
+  .gate .pillar::before, .gate .pillar::after { /* 뼈 끝 마디 */
+    content: ""; position: absolute; left: 50%; translate: -50% 0; width: 56px; height: 30px;
+    background: var(--ivory); border: 4px solid var(--bone-line); border-radius: 15px;
+  }
+  .gate .pillar::before { top: -18px; }
+  .gate .pillar::after { bottom: -12px; }
+  .gate .pillar.l { left: 12%; }
+  .gate .pillar.r { right: 12%; }
+  .gate .sign {
+    position: absolute; left: 50%; top: 10%; translate: -50% 0; width: 92%; padding: 10px 0 8px;
+    background: linear-gradient(var(--wood), var(--wood-dark)); border: 4px solid #4d2f14; border-radius: 16px;
+    text-align: center; color: #ffe9a8; font-size: clamp(30px, 9vw, 40px); letter-spacing: 2px;
+    text-shadow: 0 3px 0 #4d2f14; box-shadow: 0 6px 0 rgba(0,0,0,.2);
+  }
+  .gate .sign small { display: block; font-size: 13px; color: #f6d690; letter-spacing: 4px; text-shadow: none; margin-top: -2px; }
+  .gate .skull { position: absolute; left: 50%; top: -14%; translate: -50% 0; width: 64px; z-index: 2; }
+
+  .booth {
+    position: absolute; left: 50%; top: 47%; width: 132px; translate: -50% -50%; z-index: 5; cursor: pointer;
+    outline: none;
+  }
+  .booth .base {
+    position: absolute; left: 50%; bottom: -16px; width: 190px; height: 64px; translate: -50% 0; z-index: -1;
+    border-radius: 50%; background: var(--grass-dark); border: 6px solid var(--path-edge);
+  }
+  .booth .awning {
+    height: 30px; border-radius: 12px 12px 4px 4px; border: 3px solid #7c2a1c;
+    background: repeating-linear-gradient(90deg, var(--red) 0 18px, #fff3e0 18px 36px);
+  }
+  .booth .body {
+    margin: 0 8px; height: 84px; background: var(--teal); border: 3px solid #1d5b58; border-top: 0;
+    border-radius: 0 0 10px 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .booth .window {
+    flex: 1; background: #fbe9c9; border: 3px solid #1d5b58; border-radius: 8px;
+    display: grid; place-items: center; font-size: 30px; line-height: 1; overflow: hidden;
+  }
+  .booth .label { text-align: center; color: #fff; font-size: 14px; }
+  .bubble {
+    position: absolute; left: 50%; bottom: calc(100% + 12px); translate: -50% 0; z-index: 2;
+    background: #fff; border: 3px solid var(--ink); border-radius: 18px; padding: 4px 12px;
+    font-size: 20px; white-space: nowrap; display: flex; align-items: center; gap: 4px;
+    font-variant-numeric: tabular-nums; box-shadow: 0 4px 0 rgba(0,0,0,.2);
+  }
+  .bubble::after {
+    content: ""; position: absolute; left: 50%; top: 100%; translate: -50% -3px; border: 10px solid transparent;
+    border-top-color: var(--ink);
+  }
+  .bubble.full { background: var(--coin); animation: nudge 1s infinite; }
+  @keyframes nudge { 50% { translate: -50% -6px; } }
+  .booth:active .body { filter: brightness(1.1); }
+  .tap-hint { position: absolute; left: 50%; top: calc(100% + 26px); translate: -50% 0; font-size: 14px; color: #fff; white-space: nowrap; text-shadow: 0 2px 0 rgba(0,0,0,.35); }
+
+  .visitor { position: absolute; z-index: 4; width: 22px; height: 34px; translate: -50% -100%; pointer-events: none; }
+  .visitor .h { width: 22px; height: 20px; border-radius: 8px; background: #f2c9a0; border: 2px solid var(--ink); position: relative; }
+  .visitor .h::before { content: ""; position: absolute; left: -2px; right: -2px; top: -4px; height: 9px; border-radius: 8px 8px 2px 2px; background: var(--hair); border: 2px solid var(--ink); border-bottom: 0; }
+  .visitor .h::after { content: ""; position: absolute; left: 5px; top: 9px; width: 8px; height: 3px; border-left: 3px solid var(--ink); border-right: 3px solid var(--ink); }
+  .visitor .b { width: 18px; height: 14px; margin: -1px auto 0; border-radius: 4px 4px 3px 3px; background: var(--shirt); border: 2px solid var(--ink); }
+  .visitor.walk { animation: bob .35s infinite alternate; }
+  @keyframes bob { to { margin-top: -3px; } }
+
+  .hint-bar {
+    position: absolute; z-index: 7; left: 50%; bottom: calc(17% + 6px); translate: -50% 0;
+    color: #fff; font-size: 15px; text-shadow: 0 2px 0 rgba(0,0,0,.4); white-space: nowrap;
+    animation: hint 1.6s infinite;
+  }
+  @keyframes hint { 50% { translate: calc(-50% + 8px) 0; } }
+
+  /* ---------- 공룡 우리 ---------- */
+  .pen { display: flex; flex-direction: column; gap: 10px; padding: 64px 14px calc(56px + env(safe-area-inset-bottom, 0px)); }
+  .pen.grass { background: #79c25f; }
+  .pen.snow { background: #b9dcef; }
+  .pen.volcano { background: #5a4038; }
+  .pen-sign {
+    align-self: center; text-align: center; background: linear-gradient(var(--wood), var(--wood-dark));
+    border: 3px solid #4d2f14; border-radius: 12px; color: #fff3cf; padding: 6px 18px 5px; min-width: 60%;
+    box-shadow: 0 4px 0 rgba(0,0,0,.2);
+  }
+  .pen-sign b { display: block; font-size: 24px; font-weight: 400; }
+  .pen-sign small { font-size: 12px; opacity: .85; }
+  .habitat {
+    position: relative; flex: 1; min-height: 160px; border-radius: 18px; overflow: hidden;
+    border: 8px solid #8b5a2b; box-shadow: inset 0 0 0 3px #b8854c, 0 6px 0 rgba(0,0,0,.18);
+  }
+  .grass .habitat { background: radial-gradient(circle at 30% 70%, #a6de82 0 50px, transparent 51px), radial-gradient(circle at 75% 30%, #a6de82 0 36px, transparent 37px), #92d070; }
+  .snow .habitat { background: radial-gradient(ellipse at 25% 80%, #fff 0 60px, transparent 61px), radial-gradient(ellipse at 80% 35%, #fff 0 44px, transparent 45px), #e3f1f9; }
+  .volcano .habitat { background: radial-gradient(ellipse at 70% 78%, #ff9b3d 0 34px, #e2533f 35px 44px, transparent 45px), #7a5446; }
+  .habitat .fence {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 26px; z-index: 3; pointer-events: none;
+    background: linear-gradient(transparent 6px, #a8713c 6px 11px, transparent 11px 16px, #a8713c 16px 21px, transparent 21px),
+                repeating-linear-gradient(90deg, transparent 0 28px, #8b5a2b 28px 36px);
+  }
+  .deco { position: absolute; font-size: 30px; pointer-events: none; translate: -50% -100%; }
   .dino {
-    position: absolute; transform: translate(-50%, -100%); cursor: pointer;
-    transition: left 1.6s ease-in-out, top 1.6s ease-in-out;
-    text-align: center; line-height: 1;
+    position: absolute; translate: -50% -100%; z-index: 2; cursor: pointer; line-height: 1; text-align: center;
+    transition: left 2.2s ease-in-out, top 2.2s ease-in-out;
   }
-  .dino .body { display: inline-block; transition: transform .3s; }
-  .dino .body.flip { transform: scaleX(-1); }
-  .dino .name {
-    font-size: 11px; font-weight: 700; background: rgba(255,255,255,.85); color: #3b2f22;
-    padding: 1px 6px; border-radius: 8px; margin-top: 2px; white-space: nowrap;
-  }
-  .dino .mood { position: absolute; top: -14px; right: -10px; font-size: 16px; }
-  .dino.selected .name { background: var(--accent); color: #fff; }
-  .dino.bounce .body { animation: bounce .5s; }
-  @keyframes bounce { 0%,100% { translate: 0 0; } 40% { translate: 0 -18px; } }
-  .egg .body { animation: wobble 1.2s infinite; }
-  @keyframes wobble { 0%,100% { rotate: 0deg; } 25% { rotate: -10deg; } 75% { rotate: 10deg; } }
-  .eggbar { width: 44px; height: 5px; background: rgba(0,0,0,.2); border-radius: 3px; margin: 3px auto 0; overflow: hidden; }
-  .eggbar i { display: block; height: 100%; background: #fff; }
+  .dino .sprite { display: inline-block; transition: transform .3s; }
+  .dino .sprite.flip { transform: scaleX(-1); }
+  .dino.hop .sprite { animation: hop .45s; }
+  @keyframes hop { 40% { translate: 0 -22px; } }
+  .dino .shadow { width: 70%; height: 10px; margin: -4px auto 0; border-radius: 50%; background: rgba(0,0,0,.18); }
+  .ghost { position: absolute; left: 50%; top: 52%; translate: -50% -50%; text-align: center; line-height: 1; }
+  .ghost .q { position: absolute; left: 50%; top: 50%; translate: -50% -50%; font-size: 46px; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.3); }
 
+  .card {
+    background: var(--paper); border-radius: 18px; padding: 12px; box-shadow: 0 5px 0 rgba(0,0,0,.18);
+  }
+  .card h3 { margin: 0 0 8px; font-weight: 400; font-size: 17px; display: flex; justify-content: space-between; align-items: baseline; }
+  .card h3 small { font-size: 13px; color: #8b7a62; }
+  .parts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .part {
+    border-radius: 12px; background: #efe5cf; padding: 4px 2px 5px; text-align: center; font-size: 12px; line-height: 1.15;
+    border: 2px solid transparent; min-width: 0;
+  }
+  .part svg { width: 34px; height: 34px; display: block; margin: 0 auto 1px; }
+  .part.none svg { filter: grayscale(1) opacity(.35); }
+  .part.done { background: #d9f0c6; border-color: #7cc35f; }
+  .part.ready { border-color: var(--coin-dark); background: #fff1c4; }
+  .part .n { font-size: 13px; font-variant-numeric: tabular-nums; }
+  .part .have { color: var(--coin-dark); font-size: 11px; }
+  .big-btn {
+    display: block; width: 100%; margin-top: 10px; border: 0; border-radius: 14px; padding: 11px;
+    font-size: 18px; color: #fff; background: #e98a2c; box-shadow: 0 4px 0 #b4621a;
+  }
+  .big-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #b4621a; }
+  .big-btn:disabled { background: #c9bfae; box-shadow: 0 4px 0 #a39a89; cursor: default; transform: none; }
+  .big-btn.green { background: #4caf50; box-shadow: 0 4px 0 #2f7d32; }
+  .big-btn.ghost-btn { background: transparent; color: #8b7a62; box-shadow: none; border: 2px solid #e2d6bd; }
+  .owned-info { display: flex; gap: 10px; align-items: center; font-size: 15px; }
+  .owned-info .stat { flex: 1; text-align: center; background: #efe5cf; border-radius: 12px; padding: 8px 4px; }
+  .owned-info .stat b { display: block; font-size: 20px; font-weight: 400; font-variant-numeric: tabular-nums; }
+  .owned-info .stat small { color: #8b7a62; font-size: 12px; }
+  .muted { color: #8b7a62; font-size: 13px; text-align: center; margin-top: 6px; }
+
+  /* ---------- 떠오르는 글자 / 코인 ---------- */
   .float {
-    position: absolute; pointer-events: none; font-weight: 800; font-size: 14px; color: #fff8c4;
-    text-shadow: 0 1px 2px rgba(0,0,0,.6); animation: up 1.2s forwards; transform: translate(-50%, -100%);
+    position: absolute; z-index: 65; pointer-events: none; font-size: 18px; color: #fff;
+    text-shadow: 0 2px 0 rgba(0,0,0,.5); translate: -50% -100%; animation: up 1.1s forwards; white-space: nowrap;
   }
-  @keyframes up { to { translate: 0 -40px; opacity: 0; } }
+  @keyframes up { to { translate: -50% -160%; opacity: 0; } }
+  .flycoin { position: absolute; z-index: 45; font-size: 22px; pointer-events: none; translate: -50% -50%; }
 
-  aside { display: flex; flex-direction: column; gap: 16px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
-  .card h2 { font-size: 15px; margin: 0 0 10px; }
-  .shop-item {
-    display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px;
-    border: 1px solid var(--line); margin-bottom: 8px;
+  /* ---------- 오버레이 (광산, 설정) ---------- */
+  .overlay {
+    position: absolute; inset: 0; z-index: 50; display: flex; flex-direction: column;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
   }
-  .shop-item .ico { font-size: 28px; width: 36px; text-align: center; }
-  .shop-item .info { flex: 1; font-size: 13px; }
-  .shop-item .info b { display: block; font-size: 14px; }
-  .shop-item .info span { color: var(--muted); }
-  button {
-    font: inherit; font-weight: 700; font-size: 13px; border: 0; border-radius: 10px;
-    padding: 8px 12px; background: var(--accent); color: var(--accent-ink); cursor: pointer;
+  #mine { background: #3b2a20; color: #fff; overflow-y: auto; }
+  .ov-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .ov-head h2 { margin: 0; font-weight: 400; font-size: 24px; flex: 1; }
+  .ov-head .wallet { font-size: 17px; color: var(--coin); }
+  .close {
+    border: 0; background: rgba(255,255,255,.15); color: #fff; border-radius: 12px; height: 38px; padding: 0 14px; font-size: 16px;
   }
-  button:disabled { opacity: .4; cursor: not-allowed; }
-  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .row button { flex: 1; }
-  .bar { height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; margin: 4px 0 10px; }
-  .bar i { display: block; height: 100%; transition: width .4s; }
-  .label { display: flex; justify-content: space-between; font-size: 13px; }
-  .empty { color: var(--muted); font-size: 13px; }
-  #toast {
-    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
-    background: #3b2f22; color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px;
-    opacity: 0; transition: opacity .3s; pointer-events: none; max-width: calc(100% - 32px); text-align: center;
+  .mine-list { display: flex; flex-direction: column; gap: 12px; }
+  .mine-card {
+    position: relative; border-radius: 20px; padding: 14px; color: var(--ink); text-align: left; border: 0;
+    display: flex; flex-direction: column; gap: 8px; box-shadow: 0 5px 0 rgba(0,0,0,.3); font-size: 15px;
   }
-  #toast.show { opacity: 1; }
+  .mine-card.grass { background: linear-gradient(135deg, #a9e08a, #6fb851); }
+  .mine-card.snow { background: linear-gradient(135deg, #f3fbff, #a8d2ea); }
+  .mine-card.volcano { background: linear-gradient(135deg, #f0a46b, #a8503a); }
+  .mine-card .t { font-size: 22px; display: flex; justify-content: space-between; align-items: center; }
+  .mine-card .cost { background: rgba(0,0,0,.6); color: var(--coin); border-radius: 14px; padding: 4px 10px; font-size: 17px; }
+  .mine-card .who { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mine-card .who span { background: rgba(255,255,255,.6); border-radius: 10px; padding: 3px 8px; font-size: 14px; }
+  .mine-card:disabled { filter: grayscale(.6) brightness(.85); cursor: default; }
+  .mine-card:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.3); }
+
+  .energy { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-size: 16px; margin-bottom: 10px; }
+  .energy i { font-style: normal; }
+  .energy i.used { opacity: .2; }
+  .grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 10px; border-radius: 18px;
+    background: rgba(0,0,0,.35);
+  }
+  .tile {
+    aspect-ratio: 1; border: 0; border-radius: 12px; position: relative; padding: 0; max-width: 100%; color: #fff;
+    background: var(--soil); box-shadow: inset 0 -6px 0 rgba(0,0,0,.25), inset 0 4px 0 rgba(255,255,255,.18);
+    display: grid; place-items: center; font-size: 26px; overflow: hidden;
+  }
+  .tile::before { /* 흙 알갱이 */
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 25% 30%, rgba(0,0,0,.18) 0 3px, transparent 4px),
+                radial-gradient(circle at 70% 65%, rgba(0,0,0,.15) 0 4px, transparent 5px),
+                radial-gradient(circle at 60% 20%, rgba(255,255,255,.15) 0 2px, transparent 3px);
+  }
+  .tile.rock { background: #8f939a; }
+  .tile.rock::after { /* 바위 금 */
+    content: ""; position: absolute; inset: 22%; border-radius: 40%;
+    border: 3px solid rgba(0,0,0,.18); border-right-color: transparent; border-bottom-color: transparent;
+  }
+  .tile.cracked::after { border-color: rgba(0,0,0,.45); inset: 14%; border-radius: 10%; transform: rotate(35deg); }
+  .tile.dug { background: var(--hole); box-shadow: inset 0 6px 10px rgba(0,0,0,.45); cursor: default; }
+  .tile.dug::before, .tile.dug::after { display: none; }
+  .tile svg { width: 78%; height: 78%; animation: reveal .4s; }
+  .tile .c { font-size: 13px; animation: reveal .4s; text-align: center; line-height: 1.1; }
+  @keyframes reveal { from { transform: scale(.2) rotate(-20deg); opacity: 0; } }
+  .tile.shake { animation: shake .25s; }
+  @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+  .tray { margin-top: 10px; background: rgba(0,0,0,.35); border-radius: 16px; padding: 8px 10px; min-height: 60px; }
+  .tray .lbl { font-size: 13px; opacity: .75; margin-bottom: 4px; }
+  .tray .items { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tray .items svg { width: 30px; height: 30px; }
+  .tray .items .empty { font-size: 14px; opacity: .6; }
+
+  .result {
+    position: absolute; inset: 0; z-index: 60; background: rgba(20,12,6,.7); display: grid; place-items: center; padding: 20px;
+  }
+  .result .box { background: var(--paper); color: var(--ink); border-radius: 22px; padding: 18px; width: 100%; max-width: 360px; text-align: center; }
+  .result h3 { margin: 0 0 10px; font-weight: 400; font-size: 24px; }
+  .result .found { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 6px; }
+  .result .found div { background: #efe5cf; border-radius: 12px; padding: 4px 6px; font-size: 12px; }
+  .result .found svg { width: 34px; height: 34px; display: block; margin: 0 auto; }
+
+  #settings { background: rgba(20,12,6,.7); justify-content: center; align-items: center; }
+  #settings .box { background: var(--paper); border-radius: 22px; padding: 18px; width: 100%; max-width: 340px; }
+  #settings h2 { margin: 0 0 6px; font-weight: 400; }
+
+  .toast {
+    position: absolute; z-index: 70; left: 50%; top: calc(64px + env(safe-area-inset-top, 0px)); translate: -50% 0;
+    background: rgba(30,20,10,.88); color: #fff; padding: 9px 16px; border-radius: 14px; font-size: 15px;
+    opacity: 0; transition: opacity .3s; pointer-events: none; width: max-content; max-width: calc(100% - 32px); text-align: center;
+  }
+  .toast.show { opacity: 1; }
+
+  .revive-fx { position: absolute; inset: 0; z-index: 10; pointer-events: none; background: radial-gradient(circle, rgba(255,240,170,.9), transparent 60%); animation: flash 1.2s forwards; }
+  @keyframes flash { from { opacity: 1; transform: scale(.3); } to { opacity: 0; transform: scale(1.6); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; transition-duration: .01s !important; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>🦕 공룡 파크</h1>
-  <div class="stat">🪙 <span id="coins">0</span></div>
-  <div class="stat">👨‍👩‍👧 <span id="visitors">0</span> <small>관람객</small></div>
-  <div class="stat">🏞️ <span id="count">0</span>/<span id="cap">0</span> <small>수용</small></div>
-</header>
+<div id="app">
+  <div class="world" id="world"></div>
 
-<main>
-  <div id="park">
-    <div class="pond"></div>
-    <div class="deco" style="left:4%;top:4%">🌴</div>
-    <div class="deco" style="left:88%;top:6%">🌋</div>
-    <div class="deco" style="left:3%;top:78%">🌿</div>
-    <div class="deco" style="left:90%;top:82%">🌴</div>
-    <div class="deco" style="left:40%;top:3%">🌳</div>
-    <div class="deco" style="left:30%;top:86%">🪨</div>
+  <div class="hud">
+    <div class="badge" id="collect" title="모은 공룡"><div>0/6<small>도감</small></div></div>
+    <div class="pill" title="누적 관람객"><span class="ic">🎟️</span><span id="visitors">0</span></div>
+    <div class="spacer"></div>
+    <div class="pill" id="coinPill"><span class="ic">🪙</span><span id="coins">0</span></div>
+    <button class="gear" id="gearBtn" aria-label="설정">⚙️</button>
   </div>
 
-  <aside>
-    <div class="card" id="detail">
-      <h2>선택한 공룡</h2>
-      <div class="empty">공원에서 공룡을 눌러보세요.</div>
+  <div class="side">
+    <button id="mineBtn" aria-label="광산으로 가기">⛏️<span>광산</span></button>
+  </div>
+
+  <button class="arrow l" id="prevBtn" aria-label="이전 화면">‹</button>
+  <button class="arrow r" id="nextBtn" aria-label="다음 화면">›</button>
+  <div class="nav" id="nav"></div>
+
+  <div class="overlay" id="mine" hidden></div>
+  <div class="overlay" id="settings" hidden>
+    <div class="box">
+      <h2>설정</h2>
+      <p class="muted" style="text-align:left">진행 상황은 이 기기의 브라우저에 자동으로 저장돼요.</p>
+      <button class="big-btn ghost-btn" id="resetBtn">처음부터 다시 하기</button>
+      <button class="big-btn" id="closeSettings">닫기</button>
     </div>
-    <div class="card">
-      <h2>🥚 알 상점</h2>
-      <div id="shop"></div>
-    </div>
-    <div class="card">
-      <h2>🔧 공원 관리</h2>
-      <div class="row">
-        <button id="expand"></button>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button class="ghost" id="reset">처음부터 다시</button>
-      </div>
-    </div>
-  </aside>
-</main>
-<div id="toast"></div>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
 
 <script>
-const SPECIES = {
-  bronto: { name: '브라키오사우루스', emoji: '🦕', diet: 'plant', price: 50,  hatch: 10, income: 1,   size: 46, filter: '' },
-  stego:  { name: '스테고사우루스',   emoji: '🦕', diet: 'plant', price: 90,  hatch: 15, income: 2,   size: 40, filter: 'hue-rotate(160deg) saturate(1.4)' },
-  raptor: { name: '벨로시랩터',       emoji: '🦖', diet: 'meat',  price: 150, hatch: 20, income: 3,   size: 34, filter: 'hue-rotate(250deg)' },
-  rex:    { name: '티라노사우루스',   emoji: '🦖', diet: 'meat',  price: 300, hatch: 30, income: 6,   size: 56, filter: '' },
-  gold:   { name: '황금 공룡',        emoji: '🦕', diet: 'plant', price: 1000,hatch: 45, income: 15,  size: 50, filter: 'sepia(1) saturate(4) brightness(1.15)' },
+/* ================= 데이터 ================= */
+const PARTS = {
+  skull: '두개골', spine: '척추뼈', rib: '갈비뼈', leg: '다리뼈', tail: '꼬리뼈',
+  claw: '발톱', tusk: '상아', fang: '송곳니', plate: '골판',
 };
-const FOOD = { plant: { emoji: '🌿', name: '풀', price: 5 }, meat: { emoji: '🍖', name: '고기', price: 10 } };
-const NAMES = ['뽀삐','두부','콩이','초코','망고','쿵쿵이','보리','감자','호떡','루루','몽이','짱구','도토리','깜지','하루','라떼','모찌','꼬북','누룽지','단추'];
-const SAVE_KEY = 'dino-park-save-v1';
+const SPECIES = {
+  raptor:   { name: '벨로시랩터',   emoji: '🦖', filter: 'hue-rotate(70deg) saturate(1.3)', size: 78,  mine: 'grass',   income: 3,
+              parts: { skull: 1, spine: 2, rib: 2, leg: 2, claw: 2 } },
+  trike:    { name: '트리케라톱스', emoji: '🦕', filter: 'hue-rotate(200deg) saturate(1.2)', size: 96, mine: 'grass',   income: 5,
+              parts: { skull: 1, spine: 3, rib: 3, leg: 4, tail: 2 } },
+  mammoth:  { name: '맘모스',       emoji: '🦣', filter: '', size: 100, mine: 'snow',    income: 10,
+              parts: { skull: 1, tusk: 2, spine: 3, rib: 3, leg: 4 } },
+  smilodon: { name: '스밀로돈',     emoji: '🐅', filter: 'sepia(.5) saturate(.8)', size: 84, mine: 'snow', income: 12,
+              parts: { skull: 1, fang: 2, spine: 2, rib: 2, leg: 4 } },
+  stego:    { name: '스테고사우루스', emoji: '🦕', filter: 'hue-rotate(110deg) saturate(1.4)', size: 100, mine: 'volcano', income: 22,
+              parts: { skull: 1, plate: 4, spine: 3, leg: 4, tail: 2 } },
+  rex:      { name: '티라노사우루스', emoji: '🦖', filter: 'hue-rotate(-20deg) saturate(1.2)', size: 112, mine: 'volcano', income: 30,
+              parts: { skull: 1, fang: 3, spine: 4, rib: 4, leg: 2 } },
+};
+const MINES = {
+  grass:   { name: '초원 광산', cost: 100,  soil: '#a8743f', hole: '#4e3218', coin: [8, 25],   dupe: 15,  deco: ['🌿', '🌴', '🪨'], label: '초원' },
+  snow:    { name: '설원 광산', cost: 450,  soil: '#8fb9d4', hole: '#2f4a5e', coin: [30, 80],  dupe: 50,  deco: ['🌲', '⛄', '🪨'], label: '설원' },
+  volcano: { name: '화산 광산', cost: 1500, soil: '#5d3d31', hole: '#22140f', coin: [90, 220], dupe: 150, deco: ['🌋', '🪨', '🔥'], label: '화산' },
+};
+const ORDER = Object.keys(SPECIES);
+const DIG_ENERGY = 14;
+const SAVE_KEY = 'dino-park-v2';
 
-let state = load() || { coins: 150, cap: 4, nextId: 1, dinos: [] };
-let selectedId = null;
+/* ================= 상태 ================= */
+function fresh() { return { coins: 150, booth: 0, visitors: 0, last: Date.now(), inv: {}, placed: {}, owned: {} }; }
+function load() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch { return null; } }
+function save() { S.last = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} }
+let S = Object.assign(fresh(), load() || {});
 
 const $ = id => document.getElementById(id);
-const park = $('park');
-const els = {}; // id -> element
+const app = $('app'), world = $('world');
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const fmt = n => Math.floor(n).toLocaleString('ko-KR');
 
-function load() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch { return null; } }
-function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch {} }
+/* ================= 뼈 그림 ================= */
+const BONE_SHAPES = {
+  skull: '<path d="M7 20C7 8 33 8 33 20v5c0 3-3 4-5 4v5H12v-5c-2 0-5-1-5-4z"/>',
+  spine: '<rect x="3" y="16" width="10" height="10" rx="3"/><rect x="15" y="16" width="10" height="10" rx="3"/><rect x="27" y="16" width="10" height="10" rx="3"/><rect x="6" y="8" width="4" height="9" rx="2"/><rect x="18" y="8" width="4" height="9" rx="2"/><rect x="30" y="8" width="4" height="9" rx="2"/>',
+  rib: '<path d="M8 35C5 18 16 5 33 5l1 5C20 11 13 20 14 35z"/>',
+  leg: '<g transform="rotate(-45 20 20)"><rect x="9" y="17" width="22" height="6" rx="3"/><circle cx="9" cy="16" r="4.2"/><circle cx="9" cy="24" r="4.2"/><circle cx="31" cy="16" r="4.2"/><circle cx="31" cy="24" r="4.2"/></g>',
+  tail: '<circle cx="8" cy="9" r="5.5"/><circle cx="15" cy="15" r="4.8"/><circle cx="21" cy="21" r="4.2"/><circle cx="26.5" cy="26" r="3.6"/><circle cx="31" cy="30" r="3"/><circle cx="34.5" cy="33.5" r="2.4"/>',
+  claw: '<path d="M10 35C10 18 20 7 35 7c-8 6-12 15-12 28z"/>',
+  tusk: '<path d="M5 28c5 9 25 9 30-16l2-7c-5 19-16 23-27 19z"/>',
+  fang: '<path d="M13 5h14c0 13-4 24-9 31-2-10-5-20-5-31z"/>',
+  plate: '<path d="M20 3l13 17-6 15H13L7 20z"/>',
+};
+const BONE_DETAIL = {
+  skull: '<circle cx="14.5" cy="19" r="3.6" fill="#5b4a33"/><circle cx="25.5" cy="19" r="3.6" fill="#5b4a33"/><path d="M16 29v4M20 29v4M24 29v4" stroke="#5b4a33" stroke-width="1.6"/>',
+  plate: '<path d="M20 9v22M14 21h12" stroke="#c9b892" stroke-width="1.6"/>',
+};
+function boneSVG(type) {
+  const s = BONE_SHAPES[type];
+  return `<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="#6b5a3e" stroke="#6b5a3e" stroke-width="4" stroke-linejoin="round">${s}</g><g fill="#f7efdc">${s}</g>${BONE_DETAIL[type] || ''}</svg>`;
+}
 
+/* ================= 공통 UI ================= */
 function toast(msg) {
   const t = $('toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 1800);
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2000);
 }
-function floatText(d, text) {
+function relPos(el) {
+  const a = app.getBoundingClientRect(), r = el.getBoundingClientRect();
+  return { x: r.left - a.left + r.width / 2, y: r.top - a.top + r.height / 2 };
+}
+function floatAt(x, y, text) {
   const f = document.createElement('div');
   f.className = 'float'; f.textContent = text;
-  f.style.left = d.x + '%'; f.style.top = (d.y - 8) + '%';
-  park.appendChild(f); setTimeout(() => f.remove(), 1200);
+  f.style.left = Math.max(70, Math.min(app.clientWidth - 70, x)) + 'px'; f.style.top = y + 'px';
+  app.appendChild(f); setTimeout(() => f.remove(), 1100);
 }
-const rand = (a, b) => a + Math.random() * (b - a);
+function flyCoins(fromEl, n) {
+  const from = relPos(fromEl), to = relPos($('coinPill').querySelector('.ic'));
+  for (let i = 0; i < Math.min(n, 10); i++) {
+    const c = document.createElement('div');
+    c.className = 'flycoin'; c.textContent = '🪙';
+    app.appendChild(c);
+    const sx = from.x + rand(-30, 30), sy = from.y + rand(-20, 20);
+    c.animate([
+      { left: from.x + 'px', top: from.y + 'px', opacity: 0 },
+      { left: sx + 'px', top: sy + 'px', opacity: 1, offset: .3 },
+      { left: to.x + 'px', top: to.y + 'px', opacity: 1 },
+    ], { duration: 650 + i * 50, easing: 'ease-in' }).onfinish = () => {
+      c.remove(); const p = $('coinPill'); p.classList.remove('pop'); void p.offsetWidth; p.classList.add('pop');
+    };
+  }
+}
+function addCoins(n, fromEl) {
+  S.coins += n;
+  if (fromEl) flyCoins(fromEl, Math.ceil(n / 10));
+  renderHud();
+}
 
-function pickName() {
-  const used = new Set(state.dinos.map(d => d.name));
-  const free = NAMES.filter(n => !used.has(n));
-  const pool = free.length ? free : NAMES;
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-function buyEgg(key) {
-  const sp = SPECIES[key];
-  if (state.dinos.length >= state.cap) return toast('공원이 꽉 찼어요! 울타리를 넓혀주세요.');
-  if (state.coins < sp.price) return toast('코인이 부족해요.');
-  state.coins -= sp.price;
-  const d = {
-    id: state.nextId++, species: key, name: pickName(),
-    egg: sp.hatch, hunger: 80, happy: 80, growth: 0,
-    x: rand(10, 90), y: rand(25, 92), flip: false,
+/* ================= 입구 화면 ================= */
+function rate() { return 2 + ORDER.filter(k => S.owned[k]).reduce((s, k) => s + SPECIES[k].income, 0); }
+function boothCap() { return Math.max(300, rate() * 180); }
+
+function buildEntrance() {
+  const p = document.createElement('section');
+  p.className = 'panel entrance'; p.id = 'entrance';
+  const trees = [[8,20],[16,34],[7,50],[15,66],[7,80],[92,22],[84,36],[93,52],[85,66],[93,80]];
+  p.innerHTML = `
+    <div class="path-v"></div><div class="path-h"></div>
+    ${trees.map(([x,y],i) => `<div class="tree ${i%2?'s':''}" style="left:${x}%;top:${y}%"></div>`).join('')}
+    <div class="gate">
+      <div class="pillar l"></div><div class="pillar r"></div>
+      <div class="sign">디노 파크<small>DINO PARK</small></div>
+      <div class="skull">${boneSVG('skull')}</div>
+    </div>
+    <div class="booth" id="booth" role="button" tabindex="0" aria-label="매표소에서 코인 받기">
+      <div class="bubble" id="bubble">🪙 <b id="boothAmt">0</b></div>
+      <div class="awning"></div>
+      <div class="body"><div class="window">🧑‍🦳</div><div class="label">매표소</div></div>
+      <div class="base"></div>
+      <div class="tap-hint">눌러서 입장료 받기</div>
+    </div>
+    <div class="hint-bar">밀어서 공룡 우리 보기 ➜</div>
+    <div class="hedge"></div>`;
+  world.appendChild(p);
+  const booth = p.querySelector('#booth');
+  const collect = () => {
+    const n = Math.floor(S.booth);
+    if (n < 1) return toast('아직 모인 입장료가 없어요.');
+    S.booth -= n; addCoins(n, booth);
+    const r = relPos(booth); floatAt(r.x, r.y - 60, `+${fmt(n)} 🪙`);
+    renderBooth(); save();
   };
-  state.dinos.push(d);
-  selectedId = d.id;
-  toast(`${sp.name} 알을 샀어요! 곧 부화해요.`);
-  render();
+  booth.addEventListener('click', collect);
+  booth.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); collect(); } });
+}
+function renderBooth() {
+  $('boothAmt').textContent = fmt(S.booth);
+  $('bubble').classList.toggle('full', S.booth >= boothCap() * 0.95);
 }
 
-function feed(d) {
-  const sp = SPECIES[d.species], food = FOOD[sp.diet];
-  if (state.coins < food.price) return toast('코인이 부족해요.');
-  if (d.hunger >= 100) return toast(`${d.name}는 배불러요!`);
-  state.coins -= food.price;
-  d.hunger = Math.min(100, d.hunger + 35);
-  d.happy = Math.min(100, d.happy + 5);
-  d.growth = Math.min(100, d.growth + 8);
-  floatText(d, food.emoji + ' 냠냠');
-  bounce(d); render();
-}
-function play(d) {
-  if (d.hunger < 15) return toast(`${d.name}는 너무 배고파서 놀 힘이 없어요.`);
-  d.happy = Math.min(100, d.happy + 20);
-  d.hunger = Math.max(0, d.hunger - 5);
-  d.growth = Math.min(100, d.growth + 4);
-  floatText(d, '💕');
-  bounce(d); render();
-}
-function sell(d) {
-  const sp = SPECIES[d.species];
-  const price = Math.round(sp.price * (d.growth >= 100 ? 1.5 : 0.5));
-  if (sell._id !== d.id) {
-    sell._id = d.id; clearTimeout(sell._t); sell._t = setTimeout(() => sell._id = null, 3000);
-    return toast(`한 번 더 누르면 ${d.name}를 ${price}코인에 다른 공원으로 보내요.`);
-  }
-  sell._id = null;
-  state.coins += price;
-  state.dinos = state.dinos.filter(x => x.id !== d.id);
-  els[d.id]?.remove(); delete els[d.id];
-  selectedId = null; render();
-}
-function bounce(d) {
-  const el = els[d.id]; if (!el) return;
-  el.classList.remove('bounce'); void el.offsetWidth; el.classList.add('bounce');
-}
-function expandCost() { return 100 * Math.pow(2, state.cap - 4); }
-
-function moodOf(d) {
-  if (d.hunger < 20) return '🍽️';
-  if (d.happy < 30) return '😢';
-  if (d.happy > 80) return '😊';
-  return '';
+const HAIR = ['#3b2a1a', '#e0a25a', '#8a3b1e', '#222', '#c7c7c7', '#f0d27a'];
+const SHIRT = ['#e2533f', '#4a7fc1', '#f2b134', '#4caf50', '#9b59b6', '#ffffff', '#2f8f8a'];
+let walkers = 0;
+function spawnVisitor() {
+  const ent = $('entrance');
+  if (!ent || walkers > 14 || document.hidden) return;
+  const v = document.createElement('div');
+  v.className = 'visitor walk';
+  v.style.setProperty('--hair', pick(HAIR)); v.style.setProperty('--shirt', pick(SHIRT));
+  v.innerHTML = '<div class="h"></div><div class="b"></div>';
+  ent.appendChild(v); walkers++;
+  const lane = rand(-3, 3);
+  const anim = v.animate([
+    { left: (50 + lane) + '%', top: 'calc(46px + 25%)' },
+    { left: (31 + lane) + '%', top: '36%', offset: .18 },
+    { left: (31 + lane) + '%', top: '62%', offset: .40 },
+    { left: (50 + lane) + '%', top: '66%', offset: .50 },
+    { left: (50 + lane) + '%', top: '66%', offset: .56 },
+    { left: (50 + lane) + '%', top: '84%', offset: .72 },
+    { left: '112%', top: '84%' },
+  ], { duration: 11000, easing: 'linear' });
+  setTimeout(() => { // 매표소 앞을 지날 때
+    if (!v.isConnected) return;
+    S.visitors++; renderHud();
+    if (current() === 0) { const r = relPos(v); floatAt(r.x, r.y - 30, '🎟️'); }
+  }, 5300);
+  anim.onfinish = () => { v.remove(); walkers--; };
 }
 
-function renderPark() {
-  for (const d of state.dinos) {
-    let el = els[d.id];
-    const sp = SPECIES[d.species];
-    if (!el) {
-      el = document.createElement('div');
-      el.className = 'dino';
-      el.innerHTML = '<div class="mood"></div><div class="body"></div><div class="name"></div><div class="eggbar"><i></i></div>';
-      el.addEventListener('click', e => { e.stopPropagation(); selectedId = d.id; render(); });
-      park.appendChild(el); els[d.id] = el;
+/* ================= 공룡 우리 ================= */
+function needTotal(k) { return Object.values(SPECIES[k].parts).reduce((a, b) => a + b, 0); }
+function placedTotal(k) { const p = S.placed[k] || {}; return Object.values(p).reduce((a, b) => a + b, 0); }
+function invOf(k, part) { return S.inv[k + '.' + part] || 0; }
+function placedOf(k, part) { return (S.placed[k] || {})[part] || 0; }
+function canPlace(k) {
+  if (S.owned[k]) return false;
+  return Object.entries(SPECIES[k].parts).some(([part, need]) => invOf(k, part) > 0 && placedOf(k, part) < need);
+}
+function isComplete(k) { return Object.entries(SPECIES[k].parts).every(([part, need]) => placedOf(k, part) >= need); }
+
+function buildPen(k, idx) {
+  const sp = SPECIES[k], mine = MINES[sp.mine];
+  const p = document.createElement('section');
+  p.className = `panel pen ${sp.mine}`; p.id = 'pen-' + k;
+  const decos = [[14, 30], [86, 46], [20, 88]].map(([x, y], i) => `<div class="deco" style="left:${x}%;top:${y}%">${mine.deco[i]}</div>`).join('');
+  p.innerHTML = `
+    <div class="pen-sign"><small>${mine.label} 구역 · ${idx}번 우리</small><b>${sp.name}</b></div>
+    <div class="habitat">${decos}<div class="fence"></div><div class="stage"></div></div>
+    <div class="card"></div>`;
+  world.appendChild(p);
+}
+
+function renderPen(k) {
+  const sp = SPECIES[k], p = $('pen-' + k);
+  const stage = p.querySelector('.stage'), card = p.querySelector('.card');
+  if (S.owned[k]) {
+    if (!stage.querySelector('.dino')) {
+      stage.innerHTML = '';
+      const d = document.createElement('div');
+      d.className = 'dino';
+      d.style.left = '50%'; d.style.top = '62%';
+      d.innerHTML = `<div class="sprite" style="font-size:${sp.size}px;filter:${sp.filter}">${sp.emoji}</div><div class="shadow"></div>`;
+      d.addEventListener('click', () => petDino(k, d));
+      stage.appendChild(d);
     }
-    const isEgg = d.egg > 0;
-    const body = el.querySelector('.body');
-    el.classList.toggle('egg', isEgg);
-    el.classList.toggle('selected', d.id === selectedId);
-    el.style.left = d.x + '%'; el.style.top = d.y + '%';
-    el.style.zIndex = Math.round(d.y);
-    const scale = 0.55 + 0.45 * (d.growth / 100);
-    body.textContent = isEgg ? '🥚' : sp.emoji;
-    body.style.fontSize = (isEgg ? 30 : sp.size * scale) + 'px';
-    body.style.filter = isEgg ? '' : sp.filter;
-    body.classList.toggle('flip', !isEgg && d.flip);
-    el.querySelector('.name').textContent = d.name;
-    el.querySelector('.mood').textContent = isEgg ? '' : moodOf(d);
-    const bar = el.querySelector('.eggbar');
-    bar.style.display = isEgg ? 'block' : 'none';
-    if (isEgg) bar.firstChild.style.width = (100 * (1 - d.egg / sp.hatch)) + '%';
-  }
-}
-
-function bar(label, val, color) {
-  return `<div class="label"><span>${label}</span><span>${Math.round(val)}</span></div>
-          <div class="bar"><i style="width:${val}%;background:${color}"></i></div>`;
-}
-const colorFor = v => v > 60 ? 'var(--good)' : v > 25 ? 'var(--warn)' : 'var(--bad)';
-
-function renderDetail() {
-  const box = $('detail');
-  const d = state.dinos.find(x => x.id === selectedId);
-  if (!d) { box.innerHTML = '<h2>선택한 공룡</h2><div class="empty">공원에서 공룡을 눌러보세요.</div>'; return; }
-  const sp = SPECIES[d.species];
-  if (d.egg > 0) {
-    box.innerHTML = `<h2>🥚 ${d.name}의 알</h2>
-      <div class="empty">${sp.name} 알이에요. ${Math.ceil(d.egg)}초 뒤에 부화해요!</div>`;
+    card.innerHTML = `
+      <h3>${sp.name} <small>복원 완료!</small></h3>
+      <div class="owned-info">
+        <div class="stat"><b>+${sp.income}</b><small>매표소 수입 / 초</small></div>
+        <div class="stat"><b>${needTotal(k)}</b><small>모은 뼈</small></div>
+      </div>
+      <div class="muted">공룡을 쓰다듬으면 관람객이 팁을 줘요.</div>`;
     return;
   }
-  const food = FOOD[sp.diet];
-  const stage = d.growth >= 100 ? '어른' : d.growth >= 50 ? '청소년' : '아기';
-  box.innerHTML = `<h2>${sp.emoji} ${d.name} <small style="color:var(--muted);font-weight:500">${sp.name} · ${stage}</small></h2>
-    ${bar('🍖 배부름', d.hunger, colorFor(d.hunger))}
-    ${bar('💖 행복', d.happy, colorFor(d.happy))}
-    ${bar('🌱 성장', d.growth, 'var(--accent)')}
-    <div class="row">
-      <button id="bFeed">${food.emoji} ${food.name} 주기 (${food.price})</button>
-      <button id="bPlay">🎾 놀아주기</button>
-    </div>
-    <div class="row" style="margin-top:8px"><button class="ghost" id="bSell">다른 공원에 보내기</button></div>`;
-  $('bFeed').onclick = () => feed(d);
-  $('bPlay').onclick = () => play(d);
-  $('bSell').onclick = () => sell(d);
+  const prog = placedTotal(k) / needTotal(k);
+  stage.innerHTML = `<div class="ghost"><div style="font-size:${sp.size + 20}px;filter:brightness(0) opacity(${(0.18 + prog * 0.5).toFixed(2)})">${sp.emoji}</div><div class="q">${prog > 0 ? Math.round(prog * 100) + '%' : '?'}</div></div>`;
+  const ready = canPlace(k), complete = isComplete(k);
+  card.innerHTML = `
+    <h3>뼈 맞추기 <small>${MINES[sp.mine].name}에서 발굴</small></h3>
+    <div class="parts">${Object.entries(sp.parts).map(([part, need]) => {
+      const pl = placedOf(k, part), have = invOf(k, part);
+      const cls = pl >= need ? 'done' : have > 0 ? 'ready' : pl > 0 ? '' : 'none';
+      return `<div class="part ${cls}">${boneSVG(part)}${PARTS[part]}<div class="n">${pl}/${need}</div><div class="have">${have > 0 && pl < need ? '가방 ' + have : '&nbsp;'}</div></div>`;
+    }).join('')}</div>
+    ${complete
+      ? `<button class="big-btn green" data-act="revive">🦴 ${sp.name} 되살리기!</button>`
+      : `<button class="big-btn" data-act="place" ${ready ? '' : 'disabled'}>${ready ? '가진 뼈 배치하기' : '광산에서 뼈를 더 찾아오세요'}</button>`}`;
+  const btn = card.querySelector('button');
+  btn.onclick = () => btn.dataset.act === 'revive' ? revive(k) : placeBones(k);
 }
 
-function renderShop() {
-  const shop = $('shop');
-  if (!shop.dataset.built) {
-    shop.innerHTML = Object.entries(SPECIES).map(([k, sp]) => `
-      <div class="shop-item">
-        <div class="ico" style="filter:${sp.filter}">${sp.emoji}</div>
-        <div class="info"><b>${sp.name}</b><span>${sp.diet === 'meat' ? '육식 🍖' : '초식 🌿'} · 수입 ${sp.income}/초</span></div>
-        <button data-k="${k}">🪙 ${sp.price}</button>
-      </div>`).join('');
-    shop.querySelectorAll('button').forEach(b => b.onclick = () => buyEgg(b.dataset.k));
-    shop.dataset.built = 1;
+function placeBones(k) {
+  const sp = SPECIES[k];
+  S.placed[k] = S.placed[k] || {};
+  let n = 0;
+  for (const [part, need] of Object.entries(sp.parts)) {
+    const key = k + '.' + part, move = Math.min(S.inv[key] || 0, need - placedOf(k, part));
+    if (move > 0) { S.placed[k][part] = placedOf(k, part) + move; S.inv[key] -= move; n += move; }
   }
-  shop.querySelectorAll('button').forEach(b => {
-    b.disabled = state.coins < SPECIES[b.dataset.k].price || state.dinos.length >= state.cap;
+  toast(isComplete(k) ? `뼈가 다 모였어요! ${sp.name}를 되살려보세요.` : `뼈 ${n}개를 배치했어요.`);
+  renderAll(); save();
+}
+function revive(k) {
+  S.owned[k] = true;
+  const p = $('pen-' + k), fx = document.createElement('div');
+  fx.className = 'revive-fx'; p.querySelector('.habitat').appendChild(fx);
+  setTimeout(() => fx.remove(), 1300);
+  toast(`🎉 ${SPECIES[k].name}가 되살아났어요! 매표소 수입이 늘어요.`);
+  renderAll(); save();
+}
+const petCooldown = {};
+function petDino(k, d) {
+  d.classList.remove('hop'); void d.offsetWidth; d.classList.add('hop');
+  const r = relPos(d);
+  if ((petCooldown[k] || 0) > Date.now()) { floatAt(r.x, r.y - 40, '💕'); return; }
+  petCooldown[k] = Date.now() + 8000;
+  const tip = SPECIES[k].income * 5;
+  floatAt(r.x, r.y - 40, `💕 +${tip}`);
+  addCoins(tip, d);
+}
+function wander() {
+  document.querySelectorAll('.pen .dino').forEach(d => {
+    if (Math.random() < 0.35) return;
+    const x = parseFloat(d.style.left), nx = Math.min(80, Math.max(20, x + rand(-25, 25)));
+    d.querySelector('.sprite').classList.toggle('flip', nx > x);
+    d.style.left = nx + '%';
+    d.style.top = Math.min(84, Math.max(42, parseFloat(d.style.top) + rand(-15, 15))) + '%';
   });
 }
 
-function visitors() {
-  return state.dinos.filter(d => d.egg <= 0).reduce((s, d) => s + Math.round(d.happy / 10 * (d.growth >= 100 ? 2 : 1)), 0);
+/* ================= 광산 ================= */
+let dig = null;
+function openMine() { $('mine').hidden = false; renderMineSelect(); }
+function closeMine() { $('mine').hidden = true; dig = null; renderAll(); }
+
+function renderMineSelect() {
+  const m = $('mine');
+  m.innerHTML = `
+    <div class="ov-head"><h2>⛏️ 광산 고르기</h2><span class="wallet">🪙 ${fmt(S.coins)}</span><button class="close" id="mClose">공원으로</button></div>
+    <div class="mine-list">${Object.entries(MINES).map(([id, mi]) => {
+      const who = ORDER.filter(k => SPECIES[k].mine === id);
+      return `<button class="mine-card ${id}" data-id="${id}" ${S.coins < mi.cost ? 'disabled' : ''}>
+        <div class="t">${mi.name}<span class="cost">🪙 ${fmt(mi.cost)}</span></div>
+        <div class="who">${who.map(k => `<span>${S.owned[k] ? '✅' : '🦴'} ${SPECIES[k].name}</span>`).join('')}</div>
+        <div style="font-size:13px">곡괭이 ${DIG_ENERGY}번 · ${S.coins < mi.cost ? '코인이 부족해요' : '눌러서 입장'}</div>
+      </button>`;
+    }).join('')}</div>`;
+  $('mClose').onclick = closeMine;
+  m.querySelectorAll('.mine-card').forEach(b => b.onclick = () => enterMine(b.dataset.id));
 }
 
-function render() {
-  $('coins').textContent = Math.floor(state.coins).toLocaleString();
-  $('count').textContent = state.dinos.length;
-  $('cap').textContent = state.cap;
-  $('visitors').textContent = visitors();
-  const cost = expandCost();
-  $('expand').textContent = `🪵 울타리 넓히기 (+2칸) · 🪙 ${cost}`;
-  $('expand').disabled = state.coins < cost;
-  renderPark(); renderDetail(); renderShop();
+function rollBone(mineId) {
+  const all = ORDER.filter(k => SPECIES[k].mine === mineId);
+  const open = all.filter(k => !S.owned[k]);
+  const k = pick(open.length ? open : all);
+  // 아직 모자란 뼈가 더 잘 나오도록 가중치
+  const entries = Object.entries(SPECIES[k].parts).map(([part, need]) => [part, Math.max(0.4, need - placedOf(k, part) - invOf(k, part)) + need * 0.3]);
+  let r = Math.random() * entries.reduce((s, e) => s + e[1], 0);
+  for (const [part, w] of entries) { if ((r -= w) <= 0) return { k, part }; }
+  return { k, part: entries[0][0] };
 }
-
-// 1초마다 게임 진행
-function tick() {
-  let earned = 0;
-  for (const d of state.dinos) {
-    const sp = SPECIES[d.species];
-    if (d.egg > 0) {
-      d.egg -= 1;
-      if (d.egg <= 0) { d.egg = 0; toast(`🎉 ${d.name}(${sp.name})가 태어났어요!`); floatText(d, '🎉'); }
-      continue;
+function enterMine(id) {
+  const mi = MINES[id];
+  if (S.coins < mi.cost) return toast('코인이 부족해요. 매표소에서 입장료를 받아오세요!');
+  S.coins -= mi.cost; renderHud();
+  const tiles = Array.from({ length: 30 }, () => ({ hp: 1, kind: 'empty' }));
+  const idx = tiles.map((_, i) => i).sort(() => Math.random() - 0.5);
+  idx.slice(0, 10).forEach(i => Object.assign(tiles[i], { kind: 'bone', ...rollBone(id) }));
+  idx.slice(10, 15).forEach(i => Object.assign(tiles[i], { kind: 'coin', amt: Math.round(rand(...mi.coin)) }));
+  tiles.forEach(t => { if (Math.random() < 0.28) t.hp = 2; });
+  dig = { id, tiles, energy: DIG_ENERGY, found: [], coins: 0, done: false };
+  renderDig(); save();
+}
+function renderDig() {
+  const mi = MINES[dig.id], m = $('mine');
+  m.style.setProperty('--soil', mi.soil); m.style.setProperty('--hole', mi.hole);
+  m.innerHTML = `
+    <div class="ov-head"><h2>${mi.name}</h2><button class="close" id="mExit">그만 파기</button></div>
+    <div class="energy" id="energy"></div>
+    <div class="grid" id="grid">${dig.tiles.map((t, i) => `<button class="tile ${t.hp > 1 ? 'rock' : ''}" data-i="${i}" aria-label="땅 파기"></button>`).join('')}</div>
+    <div class="tray"><div class="lbl">이번에 찾은 것</div><div class="items" id="tray"><span class="empty">흙을 눌러서 파보세요. 회색 바위는 두 번 쳐야 깨져요.</span></div></div>`;
+  $('mExit').onclick = () => finishDig();
+  m.querySelectorAll('.tile').forEach(b => b.onclick = () => digTile(+b.dataset.i, b));
+  renderEnergy();
+}
+function renderEnergy() {
+  $('energy').innerHTML = `<span style="margin-right:6px">곡괭이</span>` +
+    Array.from({ length: DIG_ENERGY }, (_, i) => `<i class="${i >= dig.energy ? 'used' : ''}">⛏️</i>`).join('');
+}
+function digTile(i, el) {
+  const t = dig.tiles[i];
+  if (dig.done || t.dug || dig.energy <= 0) return;
+  dig.energy--; t.hp--;
+  el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+  if (t.hp > 0) { el.classList.add('cracked'); renderEnergy(); return; }
+  t.dug = true; el.classList.add('dug'); el.classList.remove('rock', 'cracked');
+  const r = relPos(el);
+  if (t.kind === 'bone') {
+    const sp = SPECIES[t.k];
+    el.innerHTML = boneSVG(t.part);
+    if (S.owned[t.k]) {
+      const amt = MINES[dig.id].dupe; S.coins += amt; dig.coins += amt;
+      floatAt(r.x, r.y - 20, `이미 복원한 공룡 뼈 → +${amt}🪙`);
+    } else {
+      const key = t.k + '.' + t.part; S.inv[key] = (S.inv[key] || 0) + 1;
+      floatAt(r.x, r.y - 20, `${sp.name} ${PARTS[t.part]}!`);
     }
-    d.hunger = Math.max(0, d.hunger - 0.6);
-    d.happy = Math.max(0, d.happy - (d.hunger < 20 ? 1.5 : 0.3));
-    if (d.hunger > 50 && d.happy > 50) d.growth = Math.min(100, d.growth + 0.15);
-    if (d.hunger > 0) {
-      const mult = d.growth >= 100 ? 2 : 1;
-      earned += sp.income * (d.happy / 100) * mult;
-    }
+    dig.found.push(t);
+  } else if (t.kind === 'coin') {
+    el.innerHTML = `<div class="c">🪙<br>+${t.amt}</div>`;
+    S.coins += t.amt; dig.coins += t.amt;
+    floatAt(r.x, r.y - 20, `+${t.amt} 🪙`);
+  } else {
+    el.innerHTML = '';
   }
-  state.coins += earned;
-  render();
+  renderEnergy(); renderHud(); renderTray(); save();
+  if (dig.energy <= 0) { dig.done = true; setTimeout(finishDig, 700); }
+}
+function renderTray() {
+  const coinTxt = dig.coins ? `<span style="align-self:center;margin-left:6px">🪙 +${dig.coins}</span>` : '';
+  $('tray').innerHTML = dig.found.length || dig.coins
+    ? dig.found.map(t => `<span title="${SPECIES[t.k].name} ${PARTS[t.part]}">${boneSVG(t.part)}</span>`).join('') + coinTxt
+    : '<span class="empty">아직 아무것도 없어요.</span>';
+}
+function finishDig() {
+  if (!dig || $('mine').querySelector('.result')) return;
+  dig.done = true;
+  const mi = MINES[dig.id], id = dig.id;
+  const box = document.createElement('div');
+  box.className = 'result';
+  const list = dig.found.length
+    ? dig.found.map(t => `<div>${boneSVG(t.part)}${SPECIES[t.k].name}<br>${PARTS[t.part]}</div>`).join('')
+    : '<p class="muted">이번엔 뼈를 못 찾았어요.</p>';
+  box.innerHTML = `<div class="box">
+    <h3>발굴 끝!</h3>
+    <div class="found">${list}</div>
+    ${dig.coins ? `<p class="muted">코인 +${fmt(dig.coins)}</p>` : ''}
+    <button class="big-btn green" id="rHome">공원으로 가서 뼈 맞추기</button>
+    <button class="big-btn" id="rAgain" ${S.coins < mi.cost ? 'disabled' : ''}>한 번 더 파기 (🪙 ${fmt(mi.cost)})</button>
+    <button class="big-btn ghost-btn" id="rList">다른 광산 보기</button>
+  </div>`;
+  $('mine').appendChild(box);
+  $('rHome').onclick = () => {
+    const target = ORDER.find(k => canPlace(k) || (!S.owned[k] && isComplete(k)));
+    closeMine();
+    if (target) goTo(ORDER.indexOf(target) + 1);
+  };
+  $('rAgain').onclick = () => enterMine(id);
+  $('rList').onclick = () => { dig = null; renderMineSelect(); };
 }
 
-// 공룡 돌아다니기
-function wander() {
-  for (const d of state.dinos) {
-    if (d.egg > 0 || Math.random() < 0.4) continue;
-    const nx = Math.min(92, Math.max(8, d.x + rand(-18, 18)));
-    d.flip = nx > d.x;
-    d.x = nx;
-    d.y = Math.min(94, Math.max(22, d.y + rand(-14, 14)));
-  }
-  renderPark();
+/* ================= 화면 이동 ================= */
+function current() { return Math.round(world.scrollLeft / world.clientWidth); }
+function goTo(i, smooth = true) {
+  i = Math.max(0, Math.min(ORDER.length, i));
+  world.scrollTo({ left: i * world.clientWidth, behavior: smooth ? 'smooth' : 'auto' });
+}
+function buildNav() {
+  $('nav').innerHTML = ['🎪', ...ORDER.map((_, i) => i + 1)].map((t, i) => `<button data-i="${i}" aria-label="${i ? i + '번 우리' : '입구'}">${t}</button>`).join('');
+  $('nav').querySelectorAll('button').forEach(b => b.onclick = () => goTo(+b.dataset.i));
+}
+function renderNav() {
+  const c = current();
+  $('nav').querySelectorAll('button').forEach((b, i) => {
+    b.classList.toggle('on', i === c);
+    const k = ORDER[i - 1];
+    const alert = k && (canPlace(k) || (!S.owned[k] && isComplete(k)));
+    let dot = b.querySelector('.dot-alert');
+    if (alert && !dot) { dot = document.createElement('span'); dot.className = 'dot-alert'; b.appendChild(dot); }
+    if (!alert && dot) dot.remove();
+  });
+  $('prevBtn').hidden = c === 0;
+  $('nextBtn').hidden = c === ORDER.length;
 }
 
-// 관람객이 가끔 팁을 줌
-function tips() {
-  const happy = state.dinos.filter(d => d.egg <= 0 && d.happy > 60);
-  if (!happy.length) return;
-  const d = happy[Math.floor(Math.random() * happy.length)];
-  const amt = Math.round(SPECIES[d.species].income * 5);
-  state.coins += amt;
-  floatText(d, `+${amt} 🪙`);
+/* ================= 렌더 ================= */
+function renderHud() {
+  $('coins').textContent = fmt(S.coins);
+  $('visitors').textContent = fmt(S.visitors);
+  const owned = ORDER.filter(k => S.owned[k]).length;
+  $('collect').innerHTML = `<div>${owned}/${ORDER.length}<small>도감</small></div>`;
+  const cheapest = Math.min(...Object.values(MINES).map(m => m.cost));
+  let a = $('mineBtn').querySelector('.alert');
+  if (S.coins >= cheapest && !a) { a = document.createElement('span'); a.className = 'alert'; a.textContent = '!'; $('mineBtn').appendChild(a); }
+  if (S.coins < cheapest && a) a.remove();
 }
+function renderAll() { renderHud(); renderBooth(); ORDER.forEach(renderPen); renderNav(); }
 
-$('expand').onclick = () => {
-  const cost = expandCost();
-  if (state.coins < cost) return;
-  state.coins -= cost; state.cap += 2;
-  toast('울타리를 넓혔어요! 공룡을 더 키울 수 있어요.');
-  render();
-};
-$('reset').onclick = () => {
-  const btn = $('reset');
-  if (!btn.dataset.armed) {
-    btn.dataset.armed = 1; btn.textContent = '정말 지울까요? 한 번 더 누르세요';
-    setTimeout(() => { delete btn.dataset.armed; btn.textContent = '처음부터 다시'; }, 3000);
+/* ================= 시작 ================= */
+buildEntrance();
+ORDER.forEach((k, i) => buildPen(k, i + 1));
+buildNav();
+
+// 자리를 비운 동안 쌓인 입장료
+const away = Math.min(8 * 3600, Math.max(0, (Date.now() - (S.last || Date.now())) / 1000));
+const before = S.booth;
+S.booth = Math.min(boothCap(), S.booth + away * rate());
+renderAll();
+if (S.booth - before >= 10 && away > 60) toast(`자리를 비운 동안 매표소에 🪙 ${fmt(S.booth - before)} 모였어요!`);
+else if (!ORDER.some(k => S.owned[k]) && !Object.keys(S.inv).length) toast('매표소를 눌러 입장료를 받고, 광산에서 뼈를 찾아보세요!');
+
+world.addEventListener('scroll', () => { clearTimeout(world._t); world._t = setTimeout(renderNav, 60); });
+window.addEventListener('resize', () => goTo(current(), false));
+$('prevBtn').onclick = () => goTo(current() - 1);
+$('nextBtn').onclick = () => goTo(current() + 1);
+$('mineBtn').onclick = openMine;
+$('gearBtn').onclick = () => { $('settings').hidden = false; };
+$('closeSettings').onclick = () => { $('settings').hidden = true; };
+$('resetBtn').onclick = () => {
+  const b = $('resetBtn');
+  if (!b.dataset.armed) {
+    b.dataset.armed = 1; b.textContent = '모든 공룡이 사라져요. 한 번 더 누르세요';
+    setTimeout(() => { delete b.dataset.armed; b.textContent = '처음부터 다시 하기'; }, 3000);
     return;
   }
-  delete btn.dataset.armed; btn.textContent = '처음부터 다시';
-  Object.values(els).forEach(e => e.remove());
-  for (const k in els) delete els[k];
-  state = { coins: 150, cap: 4, nextId: 1, dinos: [] };
-  selectedId = null; save(); render();
+  try { localStorage.removeItem(SAVE_KEY); } catch {}
+  S = fresh(); world.innerHTML = ''; walkers = 0;
+  buildEntrance(); ORDER.forEach((k, i) => buildPen(k, i + 1));
+  $('settings').hidden = true; renderAll(); goTo(0, false); save();
+  delete b.dataset.armed; b.textContent = '처음부터 다시 하기';
 };
-park.addEventListener('click', () => { selectedId = null; render(); });
 
-render();
-if (!state.dinos.length) toast('알을 사서 첫 공룡을 키워보세요! 🥚');
-setInterval(tick, 1000);
-setInterval(wander, 2500);
-setInterval(tips, 4000);
+setInterval(() => {
+  S.booth = Math.min(boothCap(), S.booth + rate());
+  renderBooth();
+}, 1000);
+setInterval(spawnVisitor, 1600);
+for (let i = 0; i < 4; i++) setTimeout(spawnVisitor, i * 500);
+setInterval(wander, 2600);
 setInterval(save, 3000);
-window.addEventListener('beforeunload', save);
+document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+window.addEventListener('pagehide', save);
 </script>
 </body>
 </html>
