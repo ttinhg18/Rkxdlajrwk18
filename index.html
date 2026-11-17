@@ -22,8 +22,12 @@
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #1f1b16; --panel: #2b251e; --ink: #f3ead9; --muted: #b3a48d;
-      --line: #43392d; --grass1: #4f7a34; --grass2: #3d6327;
+      --line: #43392d; --grass1: #4f7a34; --grass2: #3d6327; color-scheme: dark;
     }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1f1b16; --panel: #2b251e; --ink: #f3ead9; --muted: #b3a48d;
+    --line: #43392d; --grass1: #4f7a34; --grass2: #3d6327; color-scheme: dark;
   }
   * { box-sizing: border-box; }
   body {
@@ -235,7 +239,11 @@ function play(d) {
 function sell(d) {
   const sp = SPECIES[d.species];
   const price = Math.round(sp.price * (d.growth >= 100 ? 1.5 : 0.5));
-  if (!confirm(`${d.name}(${sp.name})를 다른 공원에 ${price}코인에 보낼까요?`)) return;
+  if (sell._id !== d.id) {
+    sell._id = d.id; clearTimeout(sell._t); sell._t = setTimeout(() => sell._id = null, 3000);
+    return toast(`한 번 더 누르면 ${d.name}를 ${price}코인에 다른 공원으로 보내요.`);
+  }
+  sell._id = null;
   state.coins += price;
   state.dinos = state.dinos.filter(x => x.id !== d.id);
   els[d.id]?.remove(); delete els[d.id];
@@ -400,7 +408,13 @@ $('expand').onclick = () => {
   render();
 };
 $('reset').onclick = () => {
-  if (!confirm('정말 처음부터 다시 시작할까요? 모든 공룡이 사라져요.')) return;
+  const btn = $('reset');
+  if (!btn.dataset.armed) {
+    btn.dataset.armed = 1; btn.textContent = '정말 지울까요? 한 번 더 누르세요';
+    setTimeout(() => { delete btn.dataset.armed; btn.textContent = '처음부터 다시'; }, 3000);
+    return;
+  }
+  delete btn.dataset.armed; btn.textContent = '처음부터 다시';
   Object.values(els).forEach(e => e.remove());
   for (const k in els) delete els[k];
   state = { coins: 150, cap: 4, nextId: 1, dinos: [] };
