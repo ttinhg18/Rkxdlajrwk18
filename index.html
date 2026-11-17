@@ -6,14 +6,17 @@
 <title>디노 파크</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
 <style>
-  /* 세로형 모바일 게임 화면. 하나의 가로 맵(입구 → 공룡 우리들)을 한 화면씩 넘겨 본다. */
+  /* 세로형 모바일 게임. 하나의 가로 맵: [원정 · 도감 · 금고] ← 입구 → [공룡 우리 1~6] */
   :root {
     --ink: #3a2c1c;
     --paper: #fffaf0;
+    --soft: #efe5cf;
+    --muted: #8b7a62;
     --wood: #9b6634;
     --wood-dark: #6f4521;
     --coin: #ffc93c;
     --coin-dark: #d99a12;
+    --gem: #b46cff;
     --grass: #7cc35f;
     --grass-dark: #5fa847;
     --path: #c8c0ae;
@@ -22,6 +25,8 @@
     --bone-line: #6b5a3e;
     --red: #e2533f;
     --teal: #2f8f8a;
+    --rare: #3f86d9;
+    --legend: #e0a100;
     --outside: #1d3b3a;
     --font: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
     color-scheme: light;
@@ -33,7 +38,7 @@
     background: var(--outside); color: var(--ink); font-family: var(--font);
     -webkit-user-select: none; user-select: none; overflow: hidden;
   }
-  button { font-family: var(--font); cursor: pointer; }
+  button { font-family: var(--font); cursor: pointer; color: inherit; }
   button:focus-visible, .booth:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
   #app {
@@ -50,42 +55,39 @@
   }
   .hud > * { pointer-events: auto; }
   .pill {
-    display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px 0 6px;
-    background: rgba(30,40,40,.55); color: #fff; border-radius: 18px; font-size: 18px;
+    display: flex; align-items: center; gap: 5px; height: 36px; padding: 0 12px 0 6px;
+    background: rgba(30,40,40,.6); color: #fff; border-radius: 18px; font-size: 18px; border: 0;
     text-shadow: 0 2px 0 rgba(0,0,0,.35); font-variant-numeric: tabular-nums; white-space: nowrap;
   }
-  .pill .ic { font-size: 22px; }
-  .badge {
-    width: 46px; height: 46px; border-radius: 50%; background: #4a7fc1; border: 3px solid #fff;
-    display: grid; place-items: center; color: #fff; font-size: 15px; line-height: 1; text-align: center;
-    box-shadow: 0 3px 0 rgba(0,0,0,.25);
+  .pill .ic { font-size: 21px; }
+  .pill small { font-size: 12px; opacity: .75; }
+  .pill.full small { color: #ffb4a8; opacity: 1; }
+  .lv {
+    width: 50px; height: 50px; border-radius: 50%; padding: 4px; border: 2px solid #fff; flex: none;
+    background: conic-gradient(var(--coin) var(--p, 0%), rgba(0,0,0,.4) 0); box-shadow: 0 3px 0 rgba(0,0,0,.25);
   }
-  .badge small { display: block; font-size: 10px; opacity: .9; }
+  .lv div { width: 100%; height: 100%; border-radius: 50%; background: #4a7fc1; color: #fff; display: grid; place-items: center; align-content: center; line-height: .9; }
+  .lv small { font-size: 10px; }
+  .lv b { font-weight: 400; font-size: 18px; }
   .hud .spacer { flex: 1; }
-  .gear {
-    width: 40px; height: 40px; border: 0; border-radius: 12px; background: rgba(30,40,40,.55);
-    color: #fff; font-size: 22px;
-  }
+  .gear { width: 38px; height: 38px; border: 0; border-radius: 12px; background: rgba(30,40,40,.6); font-size: 20px; flex: none; }
   #coinPill { background: linear-gradient(#5b4318, #3d2c10); }
-  #coinPill.pop { animation: pop .3s; }
+  #gemPill { background: linear-gradient(#5a2f86, #3b1d5c); }
+  .pop { animation: pop .3s; }
   @keyframes pop { 50% { transform: scale(1.12); } }
 
   /* ---------- 오른쪽 버튼 ---------- */
-  .side {
-    position: absolute; z-index: 30; right: max(10px, env(safe-area-inset-right, 0px)); top: 70px;
-    display: flex; flex-direction: column; gap: 10px;
-  }
+  .side { position: absolute; z-index: 30; right: max(10px, env(safe-area-inset-right, 0px)); top: 70px; }
   .side button {
-    position: relative; width: 62px; height: 62px; border: 0; border-radius: 16px;
-    background: #fff; box-shadow: 0 4px 0 #c9bfa8; font-size: 28px; line-height: 1;
+    position: relative; width: 60px; height: 60px; border: 0; border-radius: 16px;
+    background: #fff; box-shadow: 0 4px 0 #c9bfa8; font-size: 27px; line-height: 1;
     display: grid; place-items: center; padding: 4px 0 0;
   }
   .side button span { font-size: 11px; color: var(--ink); }
   .side button:active { transform: translateY(3px); box-shadow: 0 1px 0 #c9bfa8; }
   .alert {
     position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%;
-    background: var(--red); color: #fff; font-size: 15px; display: grid; place-items: center;
-    border: 2px solid #fff;
+    background: var(--red); color: #fff; font-size: 15px; display: grid; place-items: center; border: 2px solid #fff;
   }
 
   /* ---------- 가로 맵 ---------- */
@@ -94,29 +96,58 @@
     scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain;
   }
   .world::-webkit-scrollbar { display: none; }
-  .panel {
-    position: relative; flex: 0 0 100%; height: 100%; scroll-snap-align: start; overflow: hidden;
-  }
+  .panel { position: relative; flex: 0 0 100%; height: 100%; scroll-snap-align: start; overflow: hidden; }
 
   .nav {
     position: absolute; z-index: 25; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0;
-    display: flex; justify-content: center; gap: 6px; pointer-events: none;
+    display: flex; justify-content: center; gap: 4px; pointer-events: none;
   }
   .nav button {
-    pointer-events: auto; width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff;
-    background: rgba(30,40,40,.45); color: #fff; font-size: 14px; padding: 0; position: relative;
+    pointer-events: auto; width: 29px; height: 29px; border-radius: 50%; border: 2px solid #fff;
+    background: rgba(30,40,40,.5); color: #fff; font-size: 13px; padding: 0; position: relative; flex: none;
   }
-  .nav button.on { background: var(--coin); border-color: #fff; transform: scale(1.12); }
+  .nav button.on { background: var(--coin); transform: scale(1.14); }
+  .nav .sep { width: 6px; }
   .nav button .dot-alert {
     position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; border-radius: 50%;
     background: var(--red); border: 2px solid #fff;
   }
   .arrow {
-    position: absolute; z-index: 24; top: 50%; width: 34px; height: 54px; border: 0;
+    position: absolute; z-index: 24; top: 50%; width: 32px; height: 54px; border: 0;
     background: rgba(30,40,40,.35); color: #fff; font-size: 22px; translate: 0 -50%;
   }
   .arrow.l { left: 0; border-radius: 0 14px 14px 0; }
   .arrow.r { right: 0; border-radius: 14px 0 0 14px; }
+
+  /* ---------- 공통 패널 레이아웃 ---------- */
+  .sheet {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 70px 14px calc(56px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto; scrollbar-width: none;
+  }
+  .sheet::-webkit-scrollbar { display: none; }
+  .sign {
+    align-self: center; text-align: center; background: linear-gradient(var(--wood), var(--wood-dark));
+    border: 3px solid #4d2f14; border-radius: 12px; color: #fff3cf; padding: 6px 18px 5px; min-width: 58%;
+    box-shadow: 0 4px 0 rgba(0,0,0,.2); flex: none;
+  }
+  .sign b { display: block; font-size: 24px; font-weight: 400; }
+  .sign small { font-size: 12px; opacity: .85; }
+  .card { background: var(--paper); border-radius: 18px; padding: 12px; box-shadow: 0 5px 0 rgba(0,0,0,.18); flex: none; }
+  .card h3 { margin: 0 0 8px; font-weight: 400; font-size: 17px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .card h3 small { font-size: 13px; color: var(--muted); }
+  .big-btn {
+    display: block; width: 100%; margin-top: 10px; border: 0; border-radius: 14px; padding: 11px;
+    font-size: 18px; color: #fff; background: #e98a2c; box-shadow: 0 4px 0 #b4621a;
+  }
+  .big-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #b4621a; }
+  .big-btn:disabled { background: #c9bfae; box-shadow: 0 4px 0 #a39a89; cursor: default; transform: none; }
+  .big-btn.green { background: #4caf50; box-shadow: 0 4px 0 #2f7d32; }
+  .big-btn.purple { background: #8e4fd6; box-shadow: 0 4px 0 #5e2d9a; }
+  .big-btn.ghost-btn { background: transparent; color: var(--muted); box-shadow: none; border: 2px solid #e2d6bd; }
+  .muted { color: var(--muted); font-size: 13px; text-align: center; margin-top: 6px; }
+  .bar { height: 12px; border-radius: 6px; background: #e2d6bd; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--coin); border-radius: 6px; transition: width .4s; }
 
   /* ---------- 입구 ---------- */
   .entrance { background:
@@ -132,9 +163,7 @@
     position: absolute; left: 0; right: 0; bottom: 10%; height: 13%;
     background: var(--path); border-top: 8px solid var(--path-edge); border-bottom: 8px solid var(--path-edge);
   }
-  .path-h::before { /* 세로길과 가로길이 만나는 부분 */
-    content: ""; position: absolute; left: 24%; right: 24%; top: -8px; height: 8px; background: var(--path);
-  }
+  .path-h::before { content: ""; position: absolute; left: 24%; right: 24%; top: -8px; height: 8px; background: var(--path); }
   .hedge {
     position: absolute; left: 0; right: 0; bottom: 0; height: 10%;
     background:
@@ -143,26 +172,17 @@
       #4a8f36;
   }
   .tree { position: absolute; width: 74px; height: 84px; translate: -50% -100%; pointer-events: none; }
-  .tree::after { /* 나무 기둥 */
-    content: ""; position: absolute; left: 50%; bottom: 0; width: 16px; height: 22px; translate: -50% 0;
-    background: #8a5a2e; border-radius: 0 0 6px 6px;
-  }
-  .tree::before { /* 나뭇잎 */
+  .tree::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 16px; height: 22px; translate: -50% 0; background: #8a5a2e; border-radius: 0 0 6px 6px; }
+  .tree::before {
     content: ""; position: absolute; left: 0; right: 0; top: 0; height: 66px; z-index: 1; border-radius: 46% 54% 48% 52%;
-    background:
-      radial-gradient(circle at 30% 30%, #9fdc78 0 14px, transparent 15px),
-      radial-gradient(circle at 70% 45%, #74bf55 0 18px, transparent 19px),
-      #5fae44;
+    background: radial-gradient(circle at 30% 30%, #9fdc78 0 14px, transparent 15px), radial-gradient(circle at 70% 45%, #74bf55 0 18px, transparent 19px), #5fae44;
     box-shadow: 0 8px 0 #3f8a32, 6px 14px 16px rgba(0,0,0,.18);
   }
   .tree.s { transform: scale(.78); transform-origin: 50% 100%; }
 
   .gate { position: absolute; left: 50%; top: calc(46px + 3%); width: 82%; height: 26%; translate: -50% 0; z-index: 6; pointer-events: none; }
-  .gate .pillar {
-    position: absolute; bottom: 0; width: 34px; height: 76%; background: var(--ivory);
-    border: 4px solid var(--bone-line); border-radius: 14px;
-  }
-  .gate .pillar::before, .gate .pillar::after { /* 뼈 끝 마디 */
+  .gate .pillar { position: absolute; bottom: 0; width: 34px; height: 76%; background: var(--ivory); border: 4px solid var(--bone-line); border-radius: 14px; }
+  .gate .pillar::before, .gate .pillar::after {
     content: ""; position: absolute; left: 50%; translate: -50% 0; width: 56px; height: 30px;
     background: var(--ivory); border: 4px solid var(--bone-line); border-radius: 15px;
   }
@@ -170,35 +190,26 @@
   .gate .pillar::after { bottom: -12px; }
   .gate .pillar.l { left: 12%; }
   .gate .pillar.r { right: 12%; }
-  .gate .sign {
+  .gate .board {
     position: absolute; left: 50%; top: 10%; translate: -50% 0; width: 92%; padding: 10px 0 8px;
     background: linear-gradient(var(--wood), var(--wood-dark)); border: 4px solid #4d2f14; border-radius: 16px;
     text-align: center; color: #ffe9a8; font-size: clamp(30px, 9vw, 40px); letter-spacing: 2px;
     text-shadow: 0 3px 0 #4d2f14; box-shadow: 0 6px 0 rgba(0,0,0,.2);
   }
-  .gate .sign small { display: block; font-size: 13px; color: #f6d690; letter-spacing: 4px; text-shadow: none; margin-top: -2px; }
+  .gate .board small { display: block; font-size: 13px; color: #f6d690; letter-spacing: 4px; text-shadow: none; margin-top: -2px; }
   .gate .skull { position: absolute; left: 50%; top: -14%; translate: -50% 0; width: 64px; z-index: 2; }
 
-  .booth {
-    position: absolute; left: 50%; top: 47%; width: 132px; translate: -50% -50%; z-index: 5; cursor: pointer;
-    outline: none;
-  }
+  .booth { position: absolute; left: 50%; top: 47%; width: 132px; translate: -50% -50%; z-index: 5; cursor: pointer; outline: none; }
   .booth .base {
     position: absolute; left: 50%; bottom: -16px; width: 190px; height: 64px; translate: -50% 0; z-index: -1;
     border-radius: 50%; background: var(--grass-dark); border: 6px solid var(--path-edge);
   }
-  .booth .awning {
-    height: 30px; border-radius: 12px 12px 4px 4px; border: 3px solid #7c2a1c;
-    background: repeating-linear-gradient(90deg, var(--red) 0 18px, #fff3e0 18px 36px);
-  }
+  .booth .awning { height: 30px; border-radius: 12px 12px 4px 4px; border: 3px solid #7c2a1c; background: repeating-linear-gradient(90deg, var(--red) 0 18px, #fff3e0 18px 36px); }
   .booth .body {
     margin: 0 8px; height: 84px; background: var(--teal); border: 3px solid #1d5b58; border-top: 0;
     border-radius: 0 0 10px 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px;
   }
-  .booth .window {
-    flex: 1; background: #fbe9c9; border: 3px solid #1d5b58; border-radius: 8px;
-    display: grid; place-items: center; font-size: 30px; line-height: 1; overflow: hidden;
-  }
+  .booth .window { flex: 1; background: #fbe9c9; border: 3px solid #1d5b58; border-radius: 8px; display: grid; place-items: center; font-size: 30px; line-height: 1; overflow: hidden; }
   .booth .label { text-align: center; color: #fff; font-size: 14px; }
   .bubble {
     position: absolute; left: 50%; bottom: calc(100% + 12px); translate: -50% 0; z-index: 2;
@@ -206,10 +217,7 @@
     font-size: 20px; white-space: nowrap; display: flex; align-items: center; gap: 4px;
     font-variant-numeric: tabular-nums; box-shadow: 0 4px 0 rgba(0,0,0,.2);
   }
-  .bubble::after {
-    content: ""; position: absolute; left: 50%; top: 100%; translate: -50% -3px; border: 10px solid transparent;
-    border-top-color: var(--ink);
-  }
+  .bubble::after { content: ""; position: absolute; left: 50%; top: 100%; translate: -50% -3px; border: 10px solid transparent; border-top-color: var(--ink); }
   .bubble.full { background: var(--coin); animation: nudge 1s infinite; }
   @keyframes nudge { 50% { translate: -50% -6px; } }
   .booth:active .body { filter: brightness(1.1); }
@@ -223,25 +231,20 @@
   .visitor.walk { animation: bob .35s infinite alternate; }
   @keyframes bob { to { margin-top: -3px; } }
 
-  .hint-bar {
-    position: absolute; z-index: 7; left: 50%; bottom: calc(17% + 6px); translate: -50% 0;
-    color: #fff; font-size: 15px; text-shadow: 0 2px 0 rgba(0,0,0,.4); white-space: nowrap;
-    animation: hint 1.6s infinite;
+  .hint-row {
+    position: absolute; z-index: 7; left: 14px; right: 14px; bottom: calc(17% + 6px);
+    display: flex; justify-content: space-between; color: #fff; font-size: 14px; text-shadow: 0 2px 0 rgba(0,0,0,.4);
   }
-  @keyframes hint { 50% { translate: calc(-50% + 8px) 0; } }
+  .hint-row span:first-child { animation: hintL 1.6s infinite; }
+  .hint-row span:last-child { animation: hintR 1.6s infinite; }
+  @keyframes hintL { 50% { translate: -6px 0; } }
+  @keyframes hintR { 50% { translate: 6px 0; } }
 
   /* ---------- 공룡 우리 ---------- */
   .pen { display: flex; flex-direction: column; gap: 10px; padding: 64px 14px calc(56px + env(safe-area-inset-bottom, 0px)); }
   .pen.grass { background: #79c25f; }
   .pen.snow { background: #b9dcef; }
   .pen.volcano { background: #5a4038; }
-  .pen-sign {
-    align-self: center; text-align: center; background: linear-gradient(var(--wood), var(--wood-dark));
-    border: 3px solid #4d2f14; border-radius: 12px; color: #fff3cf; padding: 6px 18px 5px; min-width: 60%;
-    box-shadow: 0 4px 0 rgba(0,0,0,.2);
-  }
-  .pen-sign b { display: block; font-size: 24px; font-weight: 400; }
-  .pen-sign small { font-size: 12px; opacity: .85; }
   .habitat {
     position: relative; flex: 1; min-height: 160px; border-radius: 18px; overflow: hidden;
     border: 8px solid #8b5a2b; box-shadow: inset 0 0 0 3px #b8854c, 0 6px 0 rgba(0,0,0,.18);
@@ -255,10 +258,7 @@
                 repeating-linear-gradient(90deg, transparent 0 28px, #8b5a2b 28px 36px);
   }
   .deco { position: absolute; font-size: 30px; pointer-events: none; translate: -50% -100%; }
-  .dino {
-    position: absolute; translate: -50% -100%; z-index: 2; cursor: pointer; line-height: 1; text-align: center;
-    transition: left 2.2s ease-in-out, top 2.2s ease-in-out;
-  }
+  .dino { position: absolute; translate: -50% -100%; z-index: 2; cursor: pointer; line-height: 1; text-align: center; transition: left 2.2s ease-in-out, top 2.2s ease-in-out; }
   .dino .sprite { display: inline-block; transition: transform .3s; }
   .dino .sprite.flip { transform: scaleX(-1); }
   .dino.hop .sprite { animation: hop .45s; }
@@ -266,36 +266,73 @@
   .dino .shadow { width: 70%; height: 10px; margin: -4px auto 0; border-radius: 50%; background: rgba(0,0,0,.18); }
   .ghost { position: absolute; left: 50%; top: 52%; translate: -50% -50%; text-align: center; line-height: 1; }
   .ghost .q { position: absolute; left: 50%; top: 50%; translate: -50% -50%; font-size: 46px; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.3); }
-
-  .card {
-    background: var(--paper); border-radius: 18px; padding: 12px; box-shadow: 0 5px 0 rgba(0,0,0,.18);
-  }
-  .card h3 { margin: 0 0 8px; font-weight: 400; font-size: 17px; display: flex; justify-content: space-between; align-items: baseline; }
-  .card h3 small { font-size: 13px; color: #8b7a62; }
   .parts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-  .part {
-    border-radius: 12px; background: #efe5cf; padding: 4px 2px 5px; text-align: center; font-size: 12px; line-height: 1.15;
-    border: 2px solid transparent; min-width: 0;
-  }
+  .part { border-radius: 12px; background: var(--soft); padding: 4px 2px 5px; text-align: center; font-size: 12px; line-height: 1.15; border: 2px solid transparent; min-width: 0; }
   .part svg { width: 34px; height: 34px; display: block; margin: 0 auto 1px; }
   .part.none svg { filter: grayscale(1) opacity(.35); }
   .part.done { background: #d9f0c6; border-color: #7cc35f; }
   .part.ready { border-color: var(--coin-dark); background: #fff1c4; }
   .part .n { font-size: 13px; font-variant-numeric: tabular-nums; }
   .part .have { color: var(--coin-dark); font-size: 11px; }
-  .big-btn {
-    display: block; width: 100%; margin-top: 10px; border: 0; border-radius: 14px; padding: 11px;
-    font-size: 18px; color: #fff; background: #e98a2c; box-shadow: 0 4px 0 #b4621a;
+  .owned-info { display: flex; gap: 10px; }
+  .stat { flex: 1; text-align: center; background: var(--soft); border-radius: 12px; padding: 8px 4px; }
+  .stat b { display: block; font-size: 20px; font-weight: 400; font-variant-numeric: tabular-nums; }
+  .stat small { color: var(--muted); font-size: 12px; }
+
+  /* ---------- 금고 ---------- */
+  .vault-room { background: repeating-linear-gradient(90deg, #6e655c 0 2px, transparent 2px 60px), repeating-linear-gradient(0deg, #6e655c 0 2px, #857a6e 2px 40px); }
+  .safe {
+    width: 150px; height: 150px; margin: 4px auto 10px; border-radius: 20px; position: relative;
+    background: var(--safe); border: 7px solid var(--safe-dark);
+    box-shadow: inset 0 0 0 7px rgba(255,255,255,.18), 0 8px 0 rgba(0,0,0,.25);
   }
-  .big-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #b4621a; }
-  .big-btn:disabled { background: #c9bfae; box-shadow: 0 4px 0 #a39a89; cursor: default; transform: none; }
-  .big-btn.green { background: #4caf50; box-shadow: 0 4px 0 #2f7d32; }
-  .big-btn.ghost-btn { background: transparent; color: #8b7a62; box-shadow: none; border: 2px solid #e2d6bd; }
-  .owned-info { display: flex; gap: 10px; align-items: center; font-size: 15px; }
-  .owned-info .stat { flex: 1; text-align: center; background: #efe5cf; border-radius: 12px; padding: 8px 4px; }
-  .owned-info .stat b { display: block; font-size: 20px; font-weight: 400; font-variant-numeric: tabular-nums; }
-  .owned-info .stat small { color: #8b7a62; font-size: 12px; }
-  .muted { color: #8b7a62; font-size: 13px; text-align: center; margin-top: 6px; }
+  .safe .dial { position: absolute; left: 44%; top: 50%; width: 60px; height: 60px; translate: -50% -50%; border-radius: 50%; border: 5px solid var(--safe-dark); background: radial-gradient(circle, #eee 0 9px, #8d8d8d 10px 13px, #cfcfcf 14px); }
+  .safe .handle { position: absolute; right: 14px; top: 50%; width: 11px; height: 50px; translate: 0 -50%; border-radius: 6px; background: var(--safe-dark); }
+  .safe .feet::before, .safe .feet::after { content: ""; position: absolute; bottom: -18px; width: 26px; height: 12px; border-radius: 0 0 6px 6px; background: var(--safe-dark); }
+  .safe .feet::before { left: 14px; } .safe .feet::after { right: 14px; }
+  .tiers { display: flex; flex-direction: column; gap: 6px; }
+  .tier { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 12px; background: var(--soft); font-size: 14px; }
+  .tier .sw { width: 22px; height: 22px; border-radius: 6px; background: var(--safe); border: 3px solid var(--safe-dark); flex: none; }
+  .tier .nm { flex: 1; }
+  .tier .req { color: var(--muted); font-size: 12px; text-align: right; }
+  .tier.cur { background: #fff1c4; outline: 2px solid var(--coin-dark); }
+  .tier.done { opacity: .55; }
+
+  /* ---------- 도감 ---------- */
+  .library { background: repeating-linear-gradient(0deg, #b98a5a 0 6px, #c99a68 6px 52px); }
+  .codex { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .relic { background: var(--soft); border-radius: 14px; padding: 8px 4px; text-align: center; min-width: 0; border: 2px solid transparent; position: relative; }
+  .relic .em { font-size: 34px; line-height: 1.1; height: 40px; display: grid; place-items: center; }
+  .relic .nm { font-size: 13px; }
+  .relic .meta { font-size: 11px; color: var(--muted); }
+  .relic.unknown .em { filter: brightness(0) opacity(.25); }
+  .relic.rare { border-color: var(--rare); }
+  .relic.legend { border-color: var(--legend); background: #fff4cf; }
+  .tag { display: inline-block; font-size: 10px; color: #fff; border-radius: 6px; padding: 1px 5px; margin-top: 2px; }
+  .tag.rare { background: var(--rare); } .tag.legend { background: var(--legend); }
+  .relic .cnt { position: absolute; top: 4px; right: 6px; font-size: 11px; color: var(--muted); }
+  .miles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .mile { border: 0; border-radius: 12px; background: var(--soft); padding: 6px 2px; font-size: 12px; line-height: 1.25; text-align: center; }
+  .mile b { display: block; font-weight: 400; font-size: 15px; }
+  .mile.ready { background: var(--gem); color: #fff; animation: nudge2 1s infinite; }
+  .mile.claimed { opacity: .5; }
+  @keyframes nudge2 { 50% { transform: translateY(-3px); } }
+
+  /* ---------- 원정 ---------- */
+  .harbor { background: radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.18) 0 30px, transparent 31px) 0 0 / 120px 70px, #4fa3c7; }
+  .staff { display: flex; gap: 10px; align-items: center; }
+  .staff .face { width: 54px; height: 54px; border-radius: 50%; background: var(--soft); display: grid; place-items: center; font-size: 32px; flex: none; }
+  .staff .who { flex: 1; min-width: 0; }
+  .staff .who b { font-weight: 400; font-size: 17px; display: block; }
+  .staff .who small { color: var(--muted); font-size: 13px; }
+  .trips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+  .trip { border: 0; border-radius: 12px; background: var(--soft); padding: 7px 2px; font-size: 12px; line-height: 1.3; text-align: center; box-shadow: 0 3px 0 #d6c8a8; }
+  .trip .ti { font-size: 24px; display: block; }
+  .trip b { font-weight: 400; font-size: 13px; display: block; }
+  .trip:disabled { opacity: .45; cursor: default; box-shadow: none; }
+  .trip:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #d6c8a8; }
+  .timer { font-variant-numeric: tabular-nums; font-size: 15px; display: flex; justify-content: space-between; margin: 8px 0 4px; }
+  .locked-staff { filter: grayscale(1); opacity: .6; }
 
   /* ---------- 떠오르는 글자 / 코인 ---------- */
   .float {
@@ -305,7 +342,7 @@
   @keyframes up { to { translate: -50% -160%; opacity: 0; } }
   .flycoin { position: absolute; z-index: 45; font-size: 22px; pointer-events: none; translate: -50% -50%; }
 
-  /* ---------- 오버레이 (광산, 설정) ---------- */
+  /* ---------- 오버레이 / 모달 ---------- */
   .overlay {
     position: absolute; inset: 0; z-index: 50; display: flex; flex-direction: column;
     padding: calc(14px + env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
@@ -313,10 +350,8 @@
   #mine { background: #3b2a20; color: #fff; overflow-y: auto; }
   .ov-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
   .ov-head h2 { margin: 0; font-weight: 400; font-size: 24px; flex: 1; }
-  .ov-head .wallet { font-size: 17px; color: var(--coin); }
-  .close {
-    border: 0; background: rgba(255,255,255,.15); color: #fff; border-radius: 12px; height: 38px; padding: 0 14px; font-size: 16px;
-  }
+  .ov-head .wallet { font-size: 16px; color: var(--coin); }
+  .close { border: 0; background: rgba(255,255,255,.15); color: #fff; border-radius: 12px; height: 38px; padding: 0 14px; font-size: 16px; }
   .mine-list { display: flex; flex-direction: column; gap: 12px; }
   .mine-card {
     position: relative; border-radius: 20px; padding: 14px; color: var(--ink); text-align: left; border: 0;
@@ -332,63 +367,56 @@
   .mine-card:disabled { filter: grayscale(.6) brightness(.85); cursor: default; }
   .mine-card:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.3); }
 
-  .energy { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-size: 16px; margin-bottom: 10px; }
+  .energy { display: flex; align-items: center; gap: 4px; font-size: 22px; margin-bottom: 10px; }
+  .energy span { font-size: 16px; margin-right: 6px; }
   .energy i { font-style: normal; }
   .energy i.used { opacity: .2; }
-  .grid {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 10px; border-radius: 18px;
-    background: rgba(0,0,0,.35);
-  }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 10px; border-radius: 18px; background: rgba(0,0,0,.35); }
   .tile {
     aspect-ratio: 1; border: 0; border-radius: 12px; position: relative; padding: 0; max-width: 100%; color: #fff;
     background: var(--soil); box-shadow: inset 0 -6px 0 rgba(0,0,0,.25), inset 0 4px 0 rgba(255,255,255,.18);
-    display: grid; place-items: center; font-size: 26px; overflow: hidden;
+    display: grid; place-items: center; font-size: 28px; overflow: hidden;
   }
-  .tile::before { /* 흙 알갱이 */
+  .tile::before {
     content: ""; position: absolute; inset: 0;
     background: radial-gradient(circle at 25% 30%, rgba(0,0,0,.18) 0 3px, transparent 4px),
                 radial-gradient(circle at 70% 65%, rgba(0,0,0,.15) 0 4px, transparent 5px),
                 radial-gradient(circle at 60% 20%, rgba(255,255,255,.15) 0 2px, transparent 3px);
   }
-  .tile.rock { background: #8f939a; }
-  .tile.rock::after { /* 바위 금 */
-    content: ""; position: absolute; inset: 22%; border-radius: 40%;
-    border: 3px solid rgba(0,0,0,.18); border-right-color: transparent; border-bottom-color: transparent;
-  }
-  .tile.cracked::after { border-color: rgba(0,0,0,.45); inset: 14%; border-radius: 10%; transform: rotate(35deg); }
   .tile.dug { background: var(--hole); box-shadow: inset 0 6px 10px rgba(0,0,0,.45); cursor: default; }
-  .tile.dug::before, .tile.dug::after { display: none; }
+  .tile.dug::before { display: none; }
+  .tile.treasure { background: radial-gradient(circle, #fff3b0, #e0a100 70%); box-shadow: 0 0 16px #ffd54a; }
   .tile svg { width: 78%; height: 78%; animation: reveal .4s; }
-  .tile .c { font-size: 13px; animation: reveal .4s; text-align: center; line-height: 1.1; }
+  .tile .c, .tile .t-em { animation: reveal .4s; text-align: center; line-height: 1.1; }
+  .tile .c { font-size: 13px; }
   @keyframes reveal { from { transform: scale(.2) rotate(-20deg); opacity: 0; } }
   .tile.shake { animation: shake .25s; }
   @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
   .tray { margin-top: 10px; background: rgba(0,0,0,.35); border-radius: 16px; padding: 8px 10px; min-height: 60px; }
   .tray .lbl { font-size: 13px; opacity: .75; margin-bottom: 4px; }
-  .tray .items { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tray .items { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
   .tray .items svg { width: 30px; height: 30px; }
   .tray .items .empty { font-size: 14px; opacity: .6; }
 
-  .result {
-    position: absolute; inset: 0; z-index: 60; background: rgba(20,12,6,.7); display: grid; place-items: center; padding: 20px;
-  }
-  .result .box { background: var(--paper); color: var(--ink); border-radius: 22px; padding: 18px; width: 100%; max-width: 360px; text-align: center; }
-  .result h3 { margin: 0 0 10px; font-weight: 400; font-size: 24px; }
-  .result .found { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 6px; }
-  .result .found div { background: #efe5cf; border-radius: 12px; padding: 4px 6px; font-size: 12px; }
-  .result .found svg { width: 34px; height: 34px; display: block; margin: 0 auto; }
+  .modal { position: absolute; inset: 0; z-index: 60; background: rgba(20,12,6,.7); display: grid; place-items: center; padding: 20px; }
+  .modal .box { background: var(--paper); color: var(--ink); border-radius: 22px; padding: 18px; width: 100%; max-width: 360px; text-align: center; max-height: 100%; overflow-y: auto; }
+  .modal h3 { margin: 0 0 10px; font-weight: 400; font-size: 24px; }
+  .modal .big-em { font-size: 64px; line-height: 1.1; animation: reveal .5s; }
+  .found { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 6px; }
+  .found div { background: var(--soft); border-radius: 12px; padding: 4px 6px; font-size: 12px; }
+  .found svg { width: 34px; height: 34px; display: block; margin: 0 auto; }
+  .found .em { font-size: 30px; display: block; }
 
   #settings { background: rgba(20,12,6,.7); justify-content: center; align-items: center; }
   #settings .box { background: var(--paper); border-radius: 22px; padding: 18px; width: 100%; max-width: 340px; }
   #settings h2 { margin: 0 0 6px; font-weight: 400; }
 
   .toast {
-    position: absolute; z-index: 70; left: 50%; top: calc(64px + env(safe-area-inset-top, 0px)); translate: -50% 0;
-    background: rgba(30,20,10,.88); color: #fff; padding: 9px 16px; border-radius: 14px; font-size: 15px;
+    position: absolute; z-index: 70; left: 50%; top: calc(66px + env(safe-area-inset-top, 0px)); translate: -50% 0;
+    background: rgba(30,20,10,.9); color: #fff; padding: 9px 16px; border-radius: 14px; font-size: 15px;
     opacity: 0; transition: opacity .3s; pointer-events: none; width: max-content; max-width: calc(100% - 32px); text-align: center;
   }
   .toast.show { opacity: 1; }
-
   .revive-fx { position: absolute; inset: 0; z-index: 10; pointer-events: none; background: radial-gradient(circle, rgba(255,240,170,.9), transparent 60%); animation: flash 1.2s forwards; }
   @keyframes flash { from { opacity: 1; transform: scale(.3); } to { opacity: 0; transform: scale(1.6); } }
 
@@ -402,19 +430,17 @@
   <div class="world" id="world"></div>
 
   <div class="hud">
-    <div class="badge" id="collect" title="모은 공룡"><div>0/6<small>도감</small></div></div>
-    <div class="pill" title="누적 관람객"><span class="ic">🎟️</span><span id="visitors">0</span></div>
+    <button class="lv" id="lvBadge" aria-label="레벨"><div><small>Lv</small><b id="lvNum">1</b></div></button>
+    <div class="pill" id="gemPill"><span class="ic">💎</span><span id="gems">0</span></div>
     <div class="spacer"></div>
-    <div class="pill" id="coinPill"><span class="ic">🪙</span><span id="coins">0</span></div>
+    <div class="pill" id="coinPill"><span class="ic">🪙</span><span id="coins">0</span><small id="coinCap"></small></div>
     <button class="gear" id="gearBtn" aria-label="설정">⚙️</button>
   </div>
 
-  <div class="side">
-    <button id="mineBtn" aria-label="광산으로 가기">⛏️<span>광산</span></button>
-  </div>
+  <div class="side"><button id="mineBtn" aria-label="광산으로 가기">⛏️<span>광산</span></button></div>
 
-  <button class="arrow l" id="prevBtn" aria-label="이전 화면">‹</button>
-  <button class="arrow r" id="nextBtn" aria-label="다음 화면">›</button>
+  <button class="arrow l" id="prevBtn" aria-label="왼쪽 화면">‹</button>
+  <button class="arrow r" id="nextBtn" aria-label="오른쪽 화면">›</button>
   <div class="nav" id="nav"></div>
 
   <div class="overlay" id="mine" hidden></div>
@@ -431,44 +457,115 @@
 
 <script>
 /* ================= 데이터 ================= */
-const PARTS = {
-  skull: '두개골', spine: '척추뼈', rib: '갈비뼈', leg: '다리뼈', tail: '꼬리뼈',
-  claw: '발톱', tusk: '상아', fang: '송곳니', plate: '골판',
-};
+const PARTS = { skull: '두개골', spine: '척추뼈', rib: '갈비뼈', leg: '다리뼈', tail: '꼬리뼈', claw: '발톱', tusk: '상아', fang: '송곳니', plate: '골판' };
 const SPECIES = {
-  raptor:   { name: '벨로시랩터',   emoji: '🦖', filter: 'hue-rotate(70deg) saturate(1.3)', size: 78,  mine: 'grass',   income: 3,
-              parts: { skull: 1, spine: 2, rib: 2, leg: 2, claw: 2 } },
-  trike:    { name: '트리케라톱스', emoji: '🦕', filter: 'hue-rotate(200deg) saturate(1.2)', size: 96, mine: 'grass',   income: 5,
-              parts: { skull: 1, spine: 3, rib: 3, leg: 4, tail: 2 } },
-  mammoth:  { name: '맘모스',       emoji: '🦣', filter: '', size: 100, mine: 'snow',    income: 10,
-              parts: { skull: 1, tusk: 2, spine: 3, rib: 3, leg: 4 } },
-  smilodon: { name: '스밀로돈',     emoji: '🐅', filter: 'sepia(.5) saturate(.8)', size: 84, mine: 'snow', income: 12,
-              parts: { skull: 1, fang: 2, spine: 2, rib: 2, leg: 4 } },
-  stego:    { name: '스테고사우루스', emoji: '🦕', filter: 'hue-rotate(110deg) saturate(1.4)', size: 100, mine: 'volcano', income: 22,
-              parts: { skull: 1, plate: 4, spine: 3, leg: 4, tail: 2 } },
-  rex:      { name: '티라노사우루스', emoji: '🦖', filter: 'hue-rotate(-20deg) saturate(1.2)', size: 112, mine: 'volcano', income: 30,
-              parts: { skull: 1, fang: 3, spine: 4, rib: 4, leg: 2 } },
+  raptor:   { name: '벨로시랩터',   emoji: '🦖', filter: 'hue-rotate(70deg) saturate(1.3)', size: 78,  mine: 'grass',   income: 3,  parts: { skull: 1, spine: 2, rib: 2, leg: 2, claw: 2 } },
+  trike:    { name: '트리케라톱스', emoji: '🦕', filter: 'hue-rotate(200deg) saturate(1.2)', size: 96, mine: 'grass',   income: 5,  parts: { skull: 1, spine: 3, rib: 3, leg: 4, tail: 2 } },
+  mammoth:  { name: '맘모스',       emoji: '🦣', filter: '', size: 100, mine: 'snow',    income: 10, parts: { skull: 1, tusk: 2, spine: 3, rib: 3, leg: 4 } },
+  smilodon: { name: '스밀로돈',     emoji: '🐅', filter: 'sepia(.5) saturate(.8)', size: 84, mine: 'snow', income: 12, parts: { skull: 1, fang: 2, spine: 2, rib: 2, leg: 4 } },
+  stego:    { name: '스테고사우루스', emoji: '🦕', filter: 'hue-rotate(110deg) saturate(1.4)', size: 100, mine: 'volcano', income: 22, parts: { skull: 1, plate: 4, spine: 3, leg: 4, tail: 2 } },
+  rex:      { name: '티라노사우루스', emoji: '🦖', filter: 'hue-rotate(-20deg) saturate(1.2)', size: 112, mine: 'volcano', income: 30, parts: { skull: 1, fang: 3, spine: 4, rib: 4, leg: 2 } },
 };
 const MINES = {
   grass:   { name: '초원 광산', cost: 100,  soil: '#a8743f', hole: '#4e3218', coin: [8, 25],   dupe: 15,  deco: ['🌿', '🌴', '🪨'], label: '초원' },
   snow:    { name: '설원 광산', cost: 450,  soil: '#8fb9d4', hole: '#2f4a5e', coin: [30, 80],  dupe: 50,  deco: ['🌲', '⛄', '🪨'], label: '설원' },
   volcano: { name: '화산 광산', cost: 1500, soil: '#5d3d31', hole: '#22140f', coin: [90, 220], dupe: 150, deco: ['🌋', '🪨', '🔥'], label: '화산' },
 };
+// 희귀 유물 (도감)
+const RELICS = {
+  ammonite:  { name: '암모나이트',   em: '🐚', mine: 'grass',   rar: 'rare' },
+  trilobite: { name: '삼엽충 화석',  em: '🪲', mine: 'grass',   rar: 'rare' },
+  amber:     { name: '호박 원석',    em: '🔶', mine: 'grass',   rar: 'rare' },
+  feather:   { name: '시조새 깃털',  em: '🪶', mine: 'grass',   rar: 'rare' },
+  ice:       { name: '만년 얼음',    em: '🧊', mine: 'snow',    rar: 'rare' },
+  pottery:   { name: '원시인 토기',  em: '🏺', mine: 'snow',    rar: 'rare' },
+  crystal:   { name: '눈꽃 수정',    em: '💠', mine: 'snow',    rar: 'rare' },
+  mural:     { name: '동굴 벽화 조각', em: '🖼️', mine: 'snow', rar: 'rare' },
+  obsidian:  { name: '흑요석 칼날',  em: '🗡️', mine: 'volcano', rar: 'rare' },
+  egg:       { name: '공룡 알 화석', em: '🥚', mine: 'volcano', rar: 'rare' },
+  meteor:    { name: '운석 조각',    em: '☄️', mine: 'volcano', rar: 'rare' },
+  orb:       { name: '용암 구슬',    em: '🔮', mine: 'volcano', rar: 'rare' },
+  crown:     { name: '고대 왕관',    em: '👑', mine: null, rar: 'legend' },
+  goldskull: { name: '황금 두개골',  em: '🏆', mine: null, rar: 'legend' },
+  key:       { name: '잃어버린 열쇠', em: '🗝️', mine: null, rar: 'legend' },
+};
+const RARE_CHANCE = 0.03, LEGEND_CHANCE = 0.004; // 한 번 팔 때마다
+const MILESTONES = [ { n: 3, gems: 5 }, { n: 6, gems: 10 }, { n: 9, gems: 15 }, { n: 12, gems: 25 }, { n: 15, gems: 50 } ];
+const VAULTS = [
+  { name: '나무 상자',     cap: 500,    level: 1,  gems: 0,   safe: '#b07a42', dark: '#6f4521' },
+  { name: '철제 금고',     cap: 1500,   level: 2,  gems: 5,   safe: '#8a929c', dark: '#4e555d' },
+  { name: '강철 금고',     cap: 4000,   level: 4,  gems: 12,  safe: '#5f7f99', dark: '#34495a' },
+  { name: '은행 금고',     cap: 12000,  level: 6,  gems: 25,  safe: '#3e7a5f', dark: '#1f4535' },
+  { name: '황금 금고',     cap: 35000,  level: 9,  gems: 45,  safe: '#e8b730', dark: '#9a700c' },
+  { name: '다이아 금고',   cap: 100000, level: 12, gems: 80,  safe: '#7fd6e8', dark: '#2f8aa0' },
+  { name: '전설의 보물고', cap: 300000, level: 16, gems: 130, safe: '#9b59b6', dark: '#552670' },
+];
+const STAFF = [
+  { name: '탐험가 도윤', face: '🧑‍🦱', level: 1 },
+  { name: '사육사 하은', face: '👩‍🦰', level: 3 },
+  { name: '박사 할아버지', face: '👴', level: 7 },
+];
+const TRIPS = {
+  jungle:  { name: '정글 탐사',   icon: '🌴', gems: 2,  hours: 1, coin: [200, 400],   bones: 2, mine: 'grass',   relic: 0.10, level: 1, xp: 20 },
+  glacier: { name: '빙하 탐사',   icon: '🏔️', gems: 5,  hours: 3, coin: [600, 1200],  bones: 3, mine: 'snow',    relic: 0.20, level: 3, xp: 50 },
+  island:  { name: '화산섬 탐사', icon: '🌋', gems: 10, hours: 8, coin: [2000, 4000], bones: 4, mine: 'volcano', relic: 0.35, level: 6, xp: 120 },
+};
 const ORDER = Object.keys(SPECIES);
-const DIG_ENERGY = 14;
+const DIG_ENERGY = 6;
 const SAVE_KEY = 'dino-park-v2';
+const LEFT = ['expedition', 'codex', 'vault']; // 입구 왼쪽 화면들
+const ENTRANCE = LEFT.length;
 
 /* ================= 상태 ================= */
-function fresh() { return { coins: 150, booth: 0, visitors: 0, last: Date.now(), inv: {}, placed: {}, owned: {} }; }
+function fresh() {
+  return { coins: 150, gems: 5, level: 1, xp: 0, vault: 0, booth: 0, last: Date.now(),
+           inv: {}, placed: {}, owned: {}, relics: {}, claimed: [], staff: STAFF.map(() => null) };
+}
 function load() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch { return null; } }
 function save() { S.last = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch {} }
 let S = Object.assign(fresh(), load() || {});
+delete S.visitors;
 
 const $ = id => document.getElementById(id);
 const app = $('app'), world = $('world');
 const rand = (a, b) => a + Math.random() * (b - a);
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const fmt = n => Math.floor(n).toLocaleString('ko-KR');
+
+/* ================= 재화 · 레벨 ================= */
+const vaultCap = () => VAULTS[S.vault].cap;
+function gainCoins(n, silent) {
+  const add = Math.max(0, Math.min(Math.floor(n), vaultCap() - S.coins));
+  S.coins += add;
+  if (add < Math.floor(n) && !silent) toast('금고가 꽉 찼어요! 금고를 업그레이드하세요.');
+  renderHud();
+  return add;
+}
+function gainGems(n) { S.gems += n; renderHud(); bump('gemPill'); }
+const xpNeed = L => Math.round(60 * Math.pow(L, 1.6));
+const levelUps = [];
+function addXp(n) {
+  S.xp += n;
+  while (S.xp >= xpNeed(S.level)) {
+    S.xp -= xpNeed(S.level); S.level++;
+    const g = 3 + S.level; S.gems += g;
+    levelUps.push({ level: S.level, gems: g });
+  }
+  renderHud();
+  if (levelUps.length && !document.querySelector('.modal.lvup')) showLevelUp();
+}
+function showLevelUp() {
+  const ups = levelUps.splice(0), last = ups[ups.length - 1], g = ups.reduce((s, u) => s + u.gems, 0);
+  const unlocks = [];
+  VAULTS.forEach((v, i) => { if (ups.some(u => u.level === v.level) && i > S.vault) unlocks.push(`🏦 ${v.name} 업그레이드 가능`); });
+  STAFF.forEach(s => { if (ups.some(u => u.level === s.level)) unlocks.push(`🧭 ${s.name} 원정 합류`); });
+  Object.values(TRIPS).forEach(t => { if (t.level > 1 && ups.some(u => u.level === t.level)) unlocks.push(`${t.icon} ${t.name} 열림`); });
+  const m = modal(`<div class="big-em">🎉</div><h3>레벨 업! Lv ${last.level}</h3>
+    <p style="font-size:20px;margin:6px 0">💎 +${g}</p>
+    ${unlocks.length ? `<p class="muted">${unlocks.join('<br>')}</p>` : ''}
+    <button class="big-btn purple" data-close>좋아요!</button>`, 'lvup');
+  bump('gemPill'); renderAll();
+}
 
 /* ================= 뼈 그림 ================= */
 const BONE_SHAPES = {
@@ -494,8 +591,9 @@ function boneSVG(type) {
 /* ================= 공통 UI ================= */
 function toast(msg) {
   const t = $('toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2000);
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2200);
 }
+function bump(id) { const p = $(id); p.classList.remove('pop'); void p.offsetWidth; p.classList.add('pop'); }
 function relPos(el) {
   const a = app.getBoundingClientRect(), r = el.getBoundingClientRect();
   return { x: r.left - a.left + r.width / 2, y: r.top - a.top + r.height / 2 };
@@ -503,34 +601,35 @@ function relPos(el) {
 function floatAt(x, y, text) {
   const f = document.createElement('div');
   f.className = 'float'; f.textContent = text;
-  f.style.left = Math.max(70, Math.min(app.clientWidth - 70, x)) + 'px'; f.style.top = y + 'px';
+  f.style.left = Math.max(80, Math.min(app.clientWidth - 80, x)) + 'px'; f.style.top = y + 'px';
   app.appendChild(f); setTimeout(() => f.remove(), 1100);
 }
 function flyCoins(fromEl, n) {
+  if (n <= 0) return;
   const from = relPos(fromEl), to = relPos($('coinPill').querySelector('.ic'));
   for (let i = 0; i < Math.min(n, 10); i++) {
     const c = document.createElement('div');
     c.className = 'flycoin'; c.textContent = '🪙';
     app.appendChild(c);
-    const sx = from.x + rand(-30, 30), sy = from.y + rand(-20, 20);
     c.animate([
       { left: from.x + 'px', top: from.y + 'px', opacity: 0 },
-      { left: sx + 'px', top: sy + 'px', opacity: 1, offset: .3 },
+      { left: from.x + rand(-30, 30) + 'px', top: from.y + rand(-20, 20) + 'px', opacity: 1, offset: .3 },
       { left: to.x + 'px', top: to.y + 'px', opacity: 1 },
-    ], { duration: 650 + i * 50, easing: 'ease-in' }).onfinish = () => {
-      c.remove(); const p = $('coinPill'); p.classList.remove('pop'); void p.offsetWidth; p.classList.add('pop');
-    };
+    ], { duration: 650 + i * 50, easing: 'ease-in' }).onfinish = () => { c.remove(); bump('coinPill'); };
   }
 }
-function addCoins(n, fromEl) {
-  S.coins += n;
-  if (fromEl) flyCoins(fromEl, Math.ceil(n / 10));
-  renderHud();
+function modal(html, cls = '') {
+  const m = document.createElement('div');
+  m.className = 'modal ' + cls;
+  m.innerHTML = `<div class="box">${html}</div>`;
+  app.appendChild(m);
+  m.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { m.remove(); if (levelUps.length) showLevelUp(); });
+  return m;
 }
 
-/* ================= 입구 화면 ================= */
-function rate() { return 2 + ORDER.filter(k => S.owned[k]).reduce((s, k) => s + SPECIES[k].income, 0); }
-function boothCap() { return Math.max(300, rate() * 180); }
+/* ================= 입구 ================= */
+const rate = () => 2 + ORDER.filter(k => S.owned[k]).reduce((s, k) => s + SPECIES[k].income, 0);
+const boothCap = () => Math.max(300, rate() * 180);
 
 function buildEntrance() {
   const p = document.createElement('section');
@@ -541,7 +640,7 @@ function buildEntrance() {
     ${trees.map(([x,y],i) => `<div class="tree ${i%2?'s':''}" style="left:${x}%;top:${y}%"></div>`).join('')}
     <div class="gate">
       <div class="pillar l"></div><div class="pillar r"></div>
-      <div class="sign">디노 파크<small>DINO PARK</small></div>
+      <div class="board">디노 파크<small>DINO PARK</small></div>
       <div class="skull">${boneSVG('skull')}</div>
     </div>
     <div class="booth" id="booth" role="button" tabindex="0" aria-label="매표소에서 코인 받기">
@@ -551,15 +650,19 @@ function buildEntrance() {
       <div class="base"></div>
       <div class="tap-hint">눌러서 입장료 받기</div>
     </div>
-    <div class="hint-bar">밀어서 공룡 우리 보기 ➜</div>
+    <div class="hint-row"><span>◀ 원정·도감·금고</span><span>공룡 우리 ▶</span></div>
     <div class="hedge"></div>`;
   world.appendChild(p);
   const booth = p.querySelector('#booth');
   const collect = () => {
     const n = Math.floor(S.booth);
     if (n < 1) return toast('아직 모인 입장료가 없어요.');
-    S.booth -= n; addCoins(n, booth);
-    const r = relPos(booth); floatAt(r.x, r.y - 60, `+${fmt(n)} 🪙`);
+    const got = gainCoins(n, true);
+    if (got <= 0) return toast('금고가 꽉 찼어요! 왼쪽 금고에서 업그레이드하세요.');
+    S.booth -= got; flyCoins(booth, Math.ceil(got / 10));
+    const r = relPos(booth); floatAt(r.x, r.y - 60, `+${fmt(got)} 🪙`);
+    if (got < n) toast('금고가 꽉 차서 일부만 받았어요.');
+    addXp(Math.max(1, Math.ceil(got / 15)));
     renderBooth(); save();
   };
   booth.addEventListener('click', collect);
@@ -569,7 +672,6 @@ function renderBooth() {
   $('boothAmt').textContent = fmt(S.booth);
   $('bubble').classList.toggle('full', S.booth >= boothCap() * 0.95);
 }
-
 const HAIR = ['#3b2a1a', '#e0a25a', '#8a3b1e', '#222', '#c7c7c7', '#f0d27a'];
 const SHIRT = ['#e2533f', '#4a7fc1', '#f2b134', '#4caf50', '#9b59b6', '#ffffff', '#2f8f8a'];
 let walkers = 0;
@@ -582,7 +684,7 @@ function spawnVisitor() {
   v.innerHTML = '<div class="h"></div><div class="b"></div>';
   ent.appendChild(v); walkers++;
   const lane = rand(-3, 3);
-  const anim = v.animate([
+  v.animate([
     { left: (50 + lane) + '%', top: 'calc(46px + 25%)' },
     { left: (31 + lane) + '%', top: '36%', offset: .18 },
     { left: (31 + lane) + '%', top: '62%', offset: .40 },
@@ -590,25 +692,16 @@ function spawnVisitor() {
     { left: (50 + lane) + '%', top: '66%', offset: .56 },
     { left: (50 + lane) + '%', top: '84%', offset: .72 },
     { left: '112%', top: '84%' },
-  ], { duration: 11000, easing: 'linear' });
-  setTimeout(() => { // 매표소 앞을 지날 때
-    if (!v.isConnected) return;
-    S.visitors++; renderHud();
-    if (current() === 0) { const r = relPos(v); floatAt(r.x, r.y - 30, '🎟️'); }
-  }, 5300);
-  anim.onfinish = () => { v.remove(); walkers--; };
+  ], { duration: 11000, easing: 'linear' }).onfinish = () => { v.remove(); walkers--; };
 }
 
 /* ================= 공룡 우리 ================= */
-function needTotal(k) { return Object.values(SPECIES[k].parts).reduce((a, b) => a + b, 0); }
-function placedTotal(k) { const p = S.placed[k] || {}; return Object.values(p).reduce((a, b) => a + b, 0); }
-function invOf(k, part) { return S.inv[k + '.' + part] || 0; }
-function placedOf(k, part) { return (S.placed[k] || {})[part] || 0; }
-function canPlace(k) {
-  if (S.owned[k]) return false;
-  return Object.entries(SPECIES[k].parts).some(([part, need]) => invOf(k, part) > 0 && placedOf(k, part) < need);
-}
-function isComplete(k) { return Object.entries(SPECIES[k].parts).every(([part, need]) => placedOf(k, part) >= need); }
+const needTotal = k => Object.values(SPECIES[k].parts).reduce((a, b) => a + b, 0);
+const placedTotal = k => Object.values(S.placed[k] || {}).reduce((a, b) => a + b, 0);
+const invOf = (k, part) => S.inv[k + '.' + part] || 0;
+const placedOf = (k, part) => (S.placed[k] || {})[part] || 0;
+const canPlace = k => !S.owned[k] && Object.entries(SPECIES[k].parts).some(([part, need]) => invOf(k, part) > 0 && placedOf(k, part) < need);
+const isComplete = k => Object.entries(SPECIES[k].parts).every(([part, need]) => placedOf(k, part) >= need);
 
 function buildPen(k, idx) {
   const sp = SPECIES[k], mine = MINES[sp.mine];
@@ -616,12 +709,11 @@ function buildPen(k, idx) {
   p.className = `panel pen ${sp.mine}`; p.id = 'pen-' + k;
   const decos = [[14, 30], [86, 46], [20, 88]].map(([x, y], i) => `<div class="deco" style="left:${x}%;top:${y}%">${mine.deco[i]}</div>`).join('');
   p.innerHTML = `
-    <div class="pen-sign"><small>${mine.label} 구역 · ${idx}번 우리</small><b>${sp.name}</b></div>
+    <div class="sign"><small>${mine.label} 구역 · ${idx}번 우리</small><b>${sp.name}</b></div>
     <div class="habitat">${decos}<div class="fence"></div><div class="stage"></div></div>
     <div class="card"></div>`;
   world.appendChild(p);
 }
-
 function renderPen(k) {
   const sp = SPECIES[k], p = $('pen-' + k);
   const stage = p.querySelector('.stage'), card = p.querySelector('.card');
@@ -629,8 +721,7 @@ function renderPen(k) {
     if (!stage.querySelector('.dino')) {
       stage.innerHTML = '';
       const d = document.createElement('div');
-      d.className = 'dino';
-      d.style.left = '50%'; d.style.top = '62%';
+      d.className = 'dino'; d.style.left = '50%'; d.style.top = '62%';
       d.innerHTML = `<div class="sprite" style="font-size:${sp.size}px;filter:${sp.filter}">${sp.emoji}</div><div class="shadow"></div>`;
       d.addEventListener('click', () => petDino(k, d));
       stage.appendChild(d);
@@ -660,7 +751,6 @@ function renderPen(k) {
   const btn = card.querySelector('button');
   btn.onclick = () => btn.dataset.act === 'revive' ? revive(k) : placeBones(k);
 }
-
 function placeBones(k) {
   const sp = SPECIES[k];
   S.placed[k] = S.placed[k] || {};
@@ -670,7 +760,7 @@ function placeBones(k) {
     if (move > 0) { S.placed[k][part] = placedOf(k, part) + move; S.inv[key] -= move; n += move; }
   }
   toast(isComplete(k) ? `뼈가 다 모였어요! ${sp.name}를 되살려보세요.` : `뼈 ${n}개를 배치했어요.`);
-  renderAll(); save();
+  renderAll(); addXp(n * 2); save();
 }
 function revive(k) {
   S.owned[k] = true;
@@ -678,7 +768,7 @@ function revive(k) {
   fx.className = 'revive-fx'; p.querySelector('.habitat').appendChild(fx);
   setTimeout(() => fx.remove(), 1300);
   toast(`🎉 ${SPECIES[k].name}가 되살아났어요! 매표소 수입이 늘어요.`);
-  renderAll(); save();
+  renderAll(); addXp(80 * (ORDER.indexOf(k) + 1)); save();
 }
 const petCooldown = {};
 function petDino(k, d) {
@@ -686,9 +776,9 @@ function petDino(k, d) {
   const r = relPos(d);
   if ((petCooldown[k] || 0) > Date.now()) { floatAt(r.x, r.y - 40, '💕'); return; }
   petCooldown[k] = Date.now() + 8000;
-  const tip = SPECIES[k].income * 5;
-  floatAt(r.x, r.y - 40, `💕 +${tip}`);
-  addCoins(tip, d);
+  const got = gainCoins(SPECIES[k].income * 5);
+  floatAt(r.x, r.y - 40, got ? `💕 +${got}` : '💕');
+  flyCoins(d, Math.ceil(got / 10));
 }
 function wander() {
   document.querySelectorAll('.pen .dino').forEach(d => {
@@ -700,32 +790,201 @@ function wander() {
   });
 }
 
+/* ================= 금고 ================= */
+function buildSheet(id, cls, small, title) {
+  const p = document.createElement('section');
+  p.className = `panel sheet ${cls}`; p.id = id;
+  p.innerHTML = `<div class="sign"><small>${small}</small><b>${title}</b></div><div class="content" style="display:flex;flex-direction:column;gap:10px"></div>`;
+  world.appendChild(p);
+  return p.querySelector('.content');
+}
+function renderVault() {
+  const c = $('vault').querySelector('.content'), v = VAULTS[S.vault], next = VAULTS[S.vault + 1];
+  const pct = Math.min(100, S.coins / v.cap * 100);
+  let btn = '';
+  if (next) {
+    const lvOk = S.level >= next.level, gemOk = S.gems >= next.gems;
+    btn = `<button class="big-btn purple" id="vaultUp" ${lvOk && gemOk ? '' : 'disabled'}>
+      ${lvOk ? `💎 ${next.gems}로 ${next.name} 업그레이드` : `Lv ${next.level}이 되면 ${next.name} 업그레이드 가능`}</button>
+      ${lvOk && !gemOk ? `<div class="muted">보석이 ${next.gems - S.gems}개 더 필요해요.</div>` : ''}`;
+  } else btn = '<div class="muted">최고 등급 금고예요!</div>';
+  c.innerHTML = `
+    <div class="card" style="--safe:${v.safe};--safe-dark:${v.dark}">
+      <h3>${v.name} <small>${S.vault + 1}단계</small></h3>
+      <div class="safe"><div class="dial"></div><div class="handle"></div><div class="feet"></div></div>
+      <div class="timer" style="margin-top:20px"><span>🪙 ${fmt(S.coins)}</span><span>최대 ${fmt(v.cap)}</span></div>
+      <div class="bar"><i style="width:${pct}%;${pct >= 100 ? 'background:var(--red)' : ''}"></i></div>
+      ${btn}
+    </div>
+    <div class="card"><h3>금고 등급 <small>레벨이 오르면 더 큰 금고를 놓을 수 있어요</small></h3>
+      <div class="tiers">${VAULTS.map((t, i) => `
+        <div class="tier ${i === S.vault ? 'cur' : i < S.vault ? 'done' : ''}" style="--safe:${t.safe};--safe-dark:${t.dark}">
+          <div class="sw"></div><div class="nm">${t.name}<br><small style="color:var(--muted)">🪙 ${fmt(t.cap)}</small></div>
+          <div class="req">${i === 0 ? '기본' : `Lv ${t.level}<br>💎 ${t.gems}`}</div>
+        </div>`).join('')}</div>
+    </div>`;
+  const b = $('vaultUp');
+  if (b) b.onclick = () => {
+    if (S.level < next.level || S.gems < next.gems) return;
+    S.gems -= next.gems; S.vault++;
+    toast(`🏦 ${next.name}로 업그레이드했어요! 최대 ${fmt(next.cap)}코인`);
+    renderAll(); save();
+  };
+}
+const vaultReady = () => { const n = VAULTS[S.vault + 1]; return n && S.level >= n.level && S.gems >= n.gems; };
+
+/* ================= 도감 ================= */
+const foundCount = () => Object.keys(RELICS).filter(id => S.relics[id]).length;
+const mileReady = () => MILESTONES.some((m, i) => foundCount() >= m.n && !S.claimed.includes(i));
+function renderCodex() {
+  const c = $('codex').querySelector('.content'), n = foundCount(), total = Object.keys(RELICS).length;
+  c.innerHTML = `
+    <div class="card">
+      <h3>유물 도감 <small>${n} / ${total}</small></h3>
+      <div class="bar" style="margin-bottom:10px"><i style="width:${n / total * 100}%;background:var(--gem)"></i></div>
+      <div class="miles">${MILESTONES.map((m, i) => {
+        const claimed = S.claimed.includes(i), ready = n >= m.n && !claimed;
+        return `<button class="mile ${claimed ? 'claimed' : ready ? 'ready' : ''}" data-i="${i}" ${ready ? '' : 'disabled'}><b>${m.n}개</b>${claimed ? '받음 ✔' : '💎 ' + m.gems}</button>`;
+      }).join('')}</div>
+      <div class="muted">광산에서 아주 낮은 확률로 유물이 나와요. 원정을 보내도 찾아올 수 있어요.</div>
+    </div>
+    <div class="card"><div class="codex">${Object.entries(RELICS).map(([id, r]) => {
+      const got = S.relics[id] || 0;
+      const where = r.mine ? MINES[r.mine].label : '모든 광산';
+      return `<div class="relic ${got ? r.rar : 'unknown'}">
+        ${got > 1 ? `<span class="cnt">×${got}</span>` : ''}
+        <div class="em">${r.em}</div>
+        <div class="nm">${got ? r.name : '???'}</div>
+        <div class="meta">${where}</div>
+        <span class="tag ${r.rar}">${r.rar === 'legend' ? '전설' : '희귀'}</span>
+      </div>`;
+    }).join('')}</div></div>`;
+  c.querySelectorAll('.mile.ready').forEach(b => b.onclick = () => {
+    const i = +b.dataset.i; S.claimed.push(i); gainGems(MILESTONES[i].gems);
+    toast(`📖 도감 보상! 💎 +${MILESTONES[i].gems}`); renderAll(); save();
+  });
+}
+function rollRelic(mineId, legendBoost = 1) {
+  if (Math.random() < 0.12 * legendBoost) return pick(Object.keys(RELICS).filter(id => RELICS[id].rar === 'legend'));
+  return pick(Object.keys(RELICS).filter(id => RELICS[id].mine === mineId));
+}
+function gainRelic(id) {
+  const first = !S.relics[id];
+  S.relics[id] = (S.relics[id] || 0) + 1;
+  addXp(RELICS[id].rar === 'legend' ? 100 : 30);
+  return first;
+}
+
+/* ================= 원정 ================= */
+function renderExpedition() {
+  const c = $('expedition').querySelector('.content'), now = Date.now();
+  c.innerHTML = STAFF.map((st, i) => {
+    const job = S.staff[i];
+    if (S.level < st.level) return `<div class="card locked-staff"><div class="staff"><div class="face">${st.face}</div>
+      <div class="who"><b>${st.name}</b><small>Lv ${st.level}에 합류해요</small></div></div></div>`;
+    if (!job) return `<div class="card"><div class="staff"><div class="face">${st.face}</div>
+      <div class="who"><b>${st.name}</b><small>쉬는 중 · 원정지를 골라주세요</small></div></div>
+      <div class="trips">${Object.entries(TRIPS).map(([tid, t]) => {
+        const ok = S.level >= t.level && S.gems >= t.gems;
+        return `<button class="trip" data-s="${i}" data-t="${tid}" ${ok ? '' : 'disabled'}>
+          <span class="ti">${t.icon}</span><b>${t.name}</b>${S.level < t.level ? `Lv ${t.level} 필요` : `💎 ${t.gems} · ${t.hours}시간`}</button>`;
+      }).join('')}</div></div>`;
+    const t = TRIPS[job.trip], left = job.end - now, done = left <= 0;
+    const skip = Math.max(1, Math.ceil(left / 3600000) * 3);
+    return `<div class="card"><div class="staff"><div class="face">${st.face}</div>
+      <div class="who"><b>${st.name}</b><small>${t.icon} ${t.name} ${done ? '완료!' : '중'}</small></div></div>
+      ${done
+        ? `<button class="big-btn green" data-claim="${i}">🎁 보상 받기</button>`
+        : `<div class="timer"><span>남은 시간</span><span data-left="${i}">${fmtTime(left)}</span></div>
+           <div class="bar"><i data-bar="${i}" style="width:${(1 - left / (job.end - job.start)) * 100}%"></i></div>
+           <button class="big-btn ghost-btn" data-skip="${i}" ${S.gems >= skip ? '' : 'disabled'}>💎 ${skip}로 바로 끝내기</button>`}
+    </div>`;
+  }).join('') + `<div class="muted" style="color:#fff">보석을 내고 직원을 원정 보내면, 시간이 지난 뒤 코인·뼈·유물을 가져와요.</div>`;
+  c.querySelectorAll('.trip').forEach(b => b.onclick = () => startTrip(+b.dataset.s, b.dataset.t));
+  c.querySelectorAll('[data-claim]').forEach(b => b.onclick = () => claimTrip(+b.dataset.claim));
+  c.querySelectorAll('[data-skip]').forEach(b => b.onclick = () => skipTrip(+b.dataset.skip));
+}
+function fmtTime(ms) {
+  const s = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+  return h ? `${h}시간 ${String(m).padStart(2, '0')}분` : `${m}분 ${String(sec).padStart(2, '0')}초`;
+}
+function startTrip(i, tid) {
+  const t = TRIPS[tid];
+  if (S.gems < t.gems || S.level < t.level || S.staff[i]) return;
+  S.gems -= t.gems;
+  S.staff[i] = { trip: tid, start: Date.now(), end: Date.now() + t.hours * 3600000 };
+  toast(`${STAFF[i].name}가 ${t.name}을 떠났어요! ${t.hours}시간 뒤에 돌아와요.`);
+  renderAll(); save();
+}
+function skipTrip(i) {
+  const job = S.staff[i]; if (!job) return;
+  const skip = Math.max(1, Math.ceil((job.end - Date.now()) / 3600000) * 3);
+  if (S.gems < skip) return;
+  S.gems -= skip; job.end = Date.now();
+  renderAll(); save();
+}
+function claimTrip(i) {
+  const job = S.staff[i]; if (!job || job.end > Date.now()) return;
+  const t = TRIPS[job.trip];
+  S.staff[i] = null;
+  const coin = gainCoins(rand(...t.coin), true);
+  const items = [];
+  for (let b = 0; b < t.bones; b++) {
+    const { k, part } = rollBone(t.mine);
+    if (S.owned[k]) { gainCoins(MINES[t.mine].dupe, true); continue; }
+    S.inv[k + '.' + part] = (S.inv[k + '.' + part] || 0) + 1;
+    items.push(`<div>${boneSVG(part)}${SPECIES[k].name}<br>${PARTS[part]}</div>`);
+  }
+  let relicHtml = '';
+  if (Math.random() < t.relic) {
+    const id = rollRelic(t.mine), first = gainRelic(id);
+    relicHtml = `<div style="border:2px solid var(--${RELICS[id].rar === 'legend' ? 'legend' : 'rare'})"><span class="em">${RELICS[id].em}</span>${RELICS[id].name}${first ? '<br>NEW!' : ''}</div>`;
+  }
+  addXp(t.xp);
+  modal(`<div class="big-em">${STAFF[i].face}</div><h3>${t.name} 귀환!</h3>
+    <div class="found">${relicHtml}${items.join('')}</div>
+    <p class="muted">코인 +${fmt(coin)}${coin < t.coin[0] ? ' (금고가 꽉 차서 일부만)' : ''}</p>
+    <button class="big-btn green" data-close>받기</button>`);
+  renderAll(); save();
+}
+function tickExpedition() {
+  const now = Date.now();
+  let changed = false;
+  S.staff.forEach((job, i) => {
+    if (!job) return;
+    const left = job.end - now, el = document.querySelector(`[data-left="${i}"]`), bar = document.querySelector(`[data-bar="${i}"]`);
+    if (left <= 0 && el) changed = true;
+    if (el) el.textContent = fmtTime(left);
+    if (bar) bar.style.width = (1 - left / (job.end - job.start)) * 100 + '%';
+  });
+  if (changed) { renderExpedition(); renderNav(); }
+}
+const tripReady = () => S.staff.some(j => j && j.end <= Date.now());
+
 /* ================= 광산 ================= */
 let dig = null;
 function openMine() { $('mine').hidden = false; renderMineSelect(); }
 function closeMine() { $('mine').hidden = true; dig = null; renderAll(); }
-
 function renderMineSelect() {
   const m = $('mine');
   m.innerHTML = `
     <div class="ov-head"><h2>⛏️ 광산 고르기</h2><span class="wallet">🪙 ${fmt(S.coins)}</span><button class="close" id="mClose">공원으로</button></div>
     <div class="mine-list">${Object.entries(MINES).map(([id, mi]) => {
       const who = ORDER.filter(k => SPECIES[k].mine === id);
-      return `<button class="mine-card ${id}" data-id="${id}" ${S.coins < mi.cost ? 'disabled' : ''}>
+      const tooBig = mi.cost > vaultCap(), poor = S.coins < mi.cost;
+      return `<button class="mine-card ${id}" data-id="${id}" ${poor ? 'disabled' : ''}>
         <div class="t">${mi.name}<span class="cost">🪙 ${fmt(mi.cost)}</span></div>
         <div class="who">${who.map(k => `<span>${S.owned[k] ? '✅' : '🦴'} ${SPECIES[k].name}</span>`).join('')}</div>
-        <div style="font-size:13px">곡괭이 ${DIG_ENERGY}번 · ${S.coins < mi.cost ? '코인이 부족해요' : '눌러서 입장'}</div>
+        <div style="font-size:13px">곡괭이 ${DIG_ENERGY}번 · ${tooBig ? '금고를 업그레이드해야 입장료를 모을 수 있어요' : poor ? '코인이 부족해요' : '눌러서 입장'}</div>
       </button>`;
     }).join('')}</div>`;
   $('mClose').onclick = closeMine;
   m.querySelectorAll('.mine-card').forEach(b => b.onclick = () => enterMine(b.dataset.id));
 }
-
 function rollBone(mineId) {
   const all = ORDER.filter(k => SPECIES[k].mine === mineId);
   const open = all.filter(k => !S.owned[k]);
   const k = pick(open.length ? open : all);
-  // 아직 모자란 뼈가 더 잘 나오도록 가중치
   const entries = Object.entries(SPECIES[k].parts).map(([part, need]) => [part, Math.max(0.4, need - placedOf(k, part) - invOf(k, part)) + need * 0.3]);
   let r = Math.random() * entries.reduce((s, e) => s + e[1], 0);
   for (const [part, w] of entries) { if ((r -= w) <= 0) return { k, part }; }
@@ -735,12 +994,11 @@ function enterMine(id) {
   const mi = MINES[id];
   if (S.coins < mi.cost) return toast('코인이 부족해요. 매표소에서 입장료를 받아오세요!');
   S.coins -= mi.cost; renderHud();
-  const tiles = Array.from({ length: 30 }, () => ({ hp: 1, kind: 'empty' }));
+  const tiles = Array.from({ length: 30 }, () => ({ kind: 'empty' }));
   const idx = tiles.map((_, i) => i).sort(() => Math.random() - 0.5);
-  idx.slice(0, 10).forEach(i => Object.assign(tiles[i], { kind: 'bone', ...rollBone(id) }));
-  idx.slice(10, 15).forEach(i => Object.assign(tiles[i], { kind: 'coin', amt: Math.round(rand(...mi.coin)) }));
-  tiles.forEach(t => { if (Math.random() < 0.28) t.hp = 2; });
-  dig = { id, tiles, energy: DIG_ENERGY, found: [], coins: 0, done: false };
+  idx.slice(0, 12).forEach(i => Object.assign(tiles[i], { kind: 'bone', ...rollBone(id) }));
+  idx.slice(12, 17).forEach(i => Object.assign(tiles[i], { kind: 'coin', amt: Math.round(rand(...mi.coin)) }));
+  dig = { id, tiles, energy: DIG_ENERGY, found: [], relics: [], coins: 0, done: false };
   renderDig(); save();
 }
 function renderDig() {
@@ -749,133 +1007,154 @@ function renderDig() {
   m.innerHTML = `
     <div class="ov-head"><h2>${mi.name}</h2><button class="close" id="mExit">그만 파기</button></div>
     <div class="energy" id="energy"></div>
-    <div class="grid" id="grid">${dig.tiles.map((t, i) => `<button class="tile ${t.hp > 1 ? 'rock' : ''}" data-i="${i}" aria-label="땅 파기"></button>`).join('')}</div>
-    <div class="tray"><div class="lbl">이번에 찾은 것</div><div class="items" id="tray"><span class="empty">흙을 눌러서 파보세요. 회색 바위는 두 번 쳐야 깨져요.</span></div></div>`;
-  $('mExit').onclick = () => finishDig();
+    <div class="grid">${dig.tiles.map((t, i) => `<button class="tile" data-i="${i}" aria-label="땅 파기"></button>`).join('')}</div>
+    <div class="tray"><div class="lbl">이번에 찾은 것</div><div class="items" id="tray"><span class="empty">곡괭이는 ${DIG_ENERGY}번! 어디를 팔지 잘 골라보세요.</span></div></div>`;
+  $('mExit').onclick = finishDig;
   m.querySelectorAll('.tile').forEach(b => b.onclick = () => digTile(+b.dataset.i, b));
   renderEnergy();
 }
 function renderEnergy() {
-  $('energy').innerHTML = `<span style="margin-right:6px">곡괭이</span>` +
-    Array.from({ length: DIG_ENERGY }, (_, i) => `<i class="${i >= dig.energy ? 'used' : ''}">⛏️</i>`).join('');
+  $('energy').innerHTML = `<span>곡괭이</span>` + Array.from({ length: DIG_ENERGY }, (_, i) => `<i class="${i >= dig.energy ? 'used' : ''}">⛏️</i>`).join('');
 }
 function digTile(i, el) {
   const t = dig.tiles[i];
   if (dig.done || t.dug || dig.energy <= 0) return;
-  dig.energy--; t.hp--;
-  el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
-  if (t.hp > 0) { el.classList.add('cracked'); renderEnergy(); return; }
-  t.dug = true; el.classList.add('dug'); el.classList.remove('rock', 'cracked');
-  const r = relPos(el);
-  if (t.kind === 'bone') {
+  dig.energy--; t.dug = true;
+  el.classList.add('dug', 'shake');
+  const r = relPos(el), roll = Math.random();
+  let xp = 3;
+  if (roll < LEGEND_CHANCE || roll < LEGEND_CHANCE + RARE_CHANCE) { // 아주 희귀한 유물!
+    const id = roll < LEGEND_CHANCE ? rollRelic(null, 1 / 0.12) : rollRelic(dig.id, 0);
+    const first = gainRelic(id);
+    el.classList.add('treasure'); el.innerHTML = `<div class="t-em">${RELICS[id].em}</div>`;
+    dig.relics.push(id);
+    modal(`<div class="big-em">${RELICS[id].em}</div><h3>${RELICS[id].rar === 'legend' ? '전설' : '희귀'} 유물 발견!</h3>
+      <p style="font-size:20px;margin:4px 0">${RELICS[id].name}</p>
+      <p class="muted">${first ? '📖 도감에 새로 등록됐어요!' : '이미 도감에 있는 유물이에요.'}</p>
+      <button class="big-btn purple" data-close>계속 파기</button>`);
+  } else if (t.kind === 'bone') {
     const sp = SPECIES[t.k];
     el.innerHTML = boneSVG(t.part);
     if (S.owned[t.k]) {
-      const amt = MINES[dig.id].dupe; S.coins += amt; dig.coins += amt;
-      floatAt(r.x, r.y - 20, `이미 복원한 공룡 뼈 → +${amt}🪙`);
+      const got = gainCoins(MINES[dig.id].dupe); dig.coins += got;
+      floatAt(r.x, r.y - 20, `이미 복원한 공룡 뼈 → +${got}🪙`);
     } else {
       const key = t.k + '.' + t.part; S.inv[key] = (S.inv[key] || 0) + 1;
       floatAt(r.x, r.y - 20, `${sp.name} ${PARTS[t.part]}!`);
+      xp += 5;
     }
     dig.found.push(t);
   } else if (t.kind === 'coin') {
+    const got = gainCoins(t.amt); dig.coins += got;
     el.innerHTML = `<div class="c">🪙<br>+${t.amt}</div>`;
-    S.coins += t.amt; dig.coins += t.amt;
-    floatAt(r.x, r.y - 20, `+${t.amt} 🪙`);
-  } else {
-    el.innerHTML = '';
+    floatAt(r.x, r.y - 20, `+${got} 🪙`);
   }
-  renderEnergy(); renderHud(); renderTray(); save();
-  if (dig.energy <= 0) { dig.done = true; setTimeout(finishDig, 700); }
+  renderEnergy(); renderTray(); addXp(xp); save();
+  if (dig.energy <= 0) { dig.done = true; setTimeout(finishDig, 800); }
 }
 function renderTray() {
-  const coinTxt = dig.coins ? `<span style="align-self:center;margin-left:6px">🪙 +${dig.coins}</span>` : '';
-  $('tray').innerHTML = dig.found.length || dig.coins
-    ? dig.found.map(t => `<span title="${SPECIES[t.k].name} ${PARTS[t.part]}">${boneSVG(t.part)}</span>`).join('') + coinTxt
-    : '<span class="empty">아직 아무것도 없어요.</span>';
+  const html = dig.relics.map(id => `<span style="font-size:26px">${RELICS[id].em}</span>`).join('')
+    + dig.found.map(t => `<span title="${SPECIES[t.k].name} ${PARTS[t.part]}">${boneSVG(t.part)}</span>`).join('')
+    + (dig.coins ? `<span style="margin-left:6px">🪙 +${dig.coins}</span>` : '');
+  $('tray').innerHTML = html || '<span class="empty">아무것도 안 나왔어요.</span>';
 }
 function finishDig() {
-  if (!dig || $('mine').querySelector('.result')) return;
+  if (!dig || document.querySelector('.modal.dig-result')) return;
+  if (document.querySelector('.modal:not(.dig-result)')) { setTimeout(finishDig, 400); return; }
   dig.done = true;
   const mi = MINES[dig.id], id = dig.id;
-  const box = document.createElement('div');
-  box.className = 'result';
-  const list = dig.found.length
-    ? dig.found.map(t => `<div>${boneSVG(t.part)}${SPECIES[t.k].name}<br>${PARTS[t.part]}</div>`).join('')
-    : '<p class="muted">이번엔 뼈를 못 찾았어요.</p>';
-  box.innerHTML = `<div class="box">
-    <h3>발굴 끝!</h3>
-    <div class="found">${list}</div>
+  const list = dig.relics.map(r => `<div><span class="em">${RELICS[r].em}</span>${RELICS[r].name}</div>`).join('')
+    + dig.found.map(t => `<div>${boneSVG(t.part)}${SPECIES[t.k].name}<br>${PARTS[t.part]}</div>`).join('');
+  const m = modal(`<h3>발굴 끝!</h3>
+    <div class="found">${list || '<p class="muted">이번엔 뼈를 못 찾았어요.</p>'}</div>
     ${dig.coins ? `<p class="muted">코인 +${fmt(dig.coins)}</p>` : ''}
     <button class="big-btn green" id="rHome">공원으로 가서 뼈 맞추기</button>
     <button class="big-btn" id="rAgain" ${S.coins < mi.cost ? 'disabled' : ''}>한 번 더 파기 (🪙 ${fmt(mi.cost)})</button>
-    <button class="big-btn ghost-btn" id="rList">다른 광산 보기</button>
-  </div>`;
-  $('mine').appendChild(box);
+    <button class="big-btn ghost-btn" id="rList">다른 광산 보기</button>`, 'dig-result');
   $('rHome').onclick = () => {
+    m.remove();
     const target = ORDER.find(k => canPlace(k) || (!S.owned[k] && isComplete(k)));
     closeMine();
-    if (target) goTo(ORDER.indexOf(target) + 1);
+    if (target) goTo(ENTRANCE + 1 + ORDER.indexOf(target));
   };
-  $('rAgain').onclick = () => enterMine(id);
-  $('rList').onclick = () => { dig = null; renderMineSelect(); };
+  $('rAgain').onclick = () => { m.remove(); enterMine(id); };
+  $('rList').onclick = () => { m.remove(); dig = null; renderMineSelect(); };
 }
 
 /* ================= 화면 이동 ================= */
-function current() { return Math.round(world.scrollLeft / world.clientWidth); }
+const PANELS = () => world.children.length;
+const current = () => Math.round(world.scrollLeft / world.clientWidth);
 function goTo(i, smooth = true) {
-  i = Math.max(0, Math.min(ORDER.length, i));
+  i = Math.max(0, Math.min(PANELS() - 1, i));
   world.scrollTo({ left: i * world.clientWidth, behavior: smooth ? 'smooth' : 'auto' });
 }
 function buildNav() {
-  $('nav').innerHTML = ['🎪', ...ORDER.map((_, i) => i + 1)].map((t, i) => `<button data-i="${i}" aria-label="${i ? i + '번 우리' : '입구'}">${t}</button>`).join('');
+  const labels = ['🧭', '📖', '🏦', '🎪', ...ORDER.map((_, i) => i + 1)];
+  const names = ['원정', '도감', '금고', '입구', ...ORDER.map((_, i) => `${i + 1}번 우리`)];
+  $('nav').innerHTML = labels.map((t, i) => `${i === ENTRANCE ? '<span class="sep"></span>' : ''}<button data-i="${i}" aria-label="${names[i]}">${t}</button>${i === ENTRANCE ? '<span class="sep"></span>' : ''}`).join('');
   $('nav').querySelectorAll('button').forEach(b => b.onclick = () => goTo(+b.dataset.i));
 }
 function renderNav() {
   const c = current();
-  $('nav').querySelectorAll('button').forEach((b, i) => {
+  $('nav').querySelectorAll('button').forEach(b => {
+    const i = +b.dataset.i;
     b.classList.toggle('on', i === c);
-    const k = ORDER[i - 1];
-    const alert = k && (canPlace(k) || (!S.owned[k] && isComplete(k)));
+    let alert = false;
+    if (i === 0) alert = tripReady();
+    else if (i === 1) alert = mileReady();
+    else if (i === 2) alert = vaultReady();
+    else if (i > ENTRANCE) { const k = ORDER[i - ENTRANCE - 1]; alert = canPlace(k) || (!S.owned[k] && isComplete(k)); }
     let dot = b.querySelector('.dot-alert');
     if (alert && !dot) { dot = document.createElement('span'); dot.className = 'dot-alert'; b.appendChild(dot); }
     if (!alert && dot) dot.remove();
   });
   $('prevBtn').hidden = c === 0;
-  $('nextBtn').hidden = c === ORDER.length;
+  $('nextBtn').hidden = c === PANELS() - 1;
 }
 
 /* ================= 렌더 ================= */
 function renderHud() {
   $('coins').textContent = fmt(S.coins);
-  $('visitors').textContent = fmt(S.visitors);
-  const owned = ORDER.filter(k => S.owned[k]).length;
-  $('collect').innerHTML = `<div>${owned}/${ORDER.length}<small>도감</small></div>`;
+  $('coinCap').textContent = '/' + fmt(vaultCap());
+  $('coinPill').classList.toggle('full', S.coins >= vaultCap());
+  $('gems').textContent = fmt(S.gems);
+  $('lvNum').textContent = S.level;
+  $('lvBadge').style.setProperty('--p', (S.xp / xpNeed(S.level) * 100) + '%');
   const cheapest = Math.min(...Object.values(MINES).map(m => m.cost));
   let a = $('mineBtn').querySelector('.alert');
   if (S.coins >= cheapest && !a) { a = document.createElement('span'); a.className = 'alert'; a.textContent = '!'; $('mineBtn').appendChild(a); }
   if (S.coins < cheapest && a) a.remove();
 }
-function renderAll() { renderHud(); renderBooth(); ORDER.forEach(renderPen); renderNav(); }
+function renderAll() { renderHud(); renderBooth(); ORDER.forEach(renderPen); renderVault(); renderCodex(); renderExpedition(); renderNav(); }
+
+function buildWorld() {
+  world.innerHTML = ''; walkers = 0;
+  buildSheet('expedition', 'harbor', '직원을 보내 보물을 찾아요', '🧭 원정 선착장');
+  buildSheet('codex', 'library', '발굴한 희귀 유물 모음', '📖 유물 도감');
+  buildSheet('vault', 'vault-room', '코인을 보관하는 곳', '🏦 코인 금고');
+  buildEntrance();
+  ORDER.forEach((k, i) => buildPen(k, i + 1));
+}
 
 /* ================= 시작 ================= */
-buildEntrance();
-ORDER.forEach((k, i) => buildPen(k, i + 1));
+buildWorld();
 buildNav();
-
-// 자리를 비운 동안 쌓인 입장료
 const away = Math.min(8 * 3600, Math.max(0, (Date.now() - (S.last || Date.now())) / 1000));
 const before = S.booth;
 S.booth = Math.min(boothCap(), S.booth + away * rate());
 renderAll();
+requestAnimationFrame(() => { goTo(ENTRANCE, false); renderNav(); });
 if (S.booth - before >= 10 && away > 60) toast(`자리를 비운 동안 매표소에 🪙 ${fmt(S.booth - before)} 모였어요!`);
 else if (!ORDER.some(k => S.owned[k]) && !Object.keys(S.inv).length) toast('매표소를 눌러 입장료를 받고, 광산에서 뼈를 찾아보세요!');
 
 world.addEventListener('scroll', () => { clearTimeout(world._t); world._t = setTimeout(renderNav, 60); });
-window.addEventListener('resize', () => goTo(current(), false));
+let lastIdx = ENTRANCE;
+window.addEventListener('resize', () => goTo(lastIdx, false));
+world.addEventListener('scrollend', () => { lastIdx = current(); });
 $('prevBtn').onclick = () => goTo(current() - 1);
 $('nextBtn').onclick = () => goTo(current() + 1);
 $('mineBtn').onclick = openMine;
+$('lvBadge').onclick = () => toast(`Lv ${S.level} · 경험치 ${fmt(S.xp)} / ${fmt(xpNeed(S.level))}`);
 $('gearBtn').onclick = () => { $('settings').hidden = false; };
 $('closeSettings').onclick = () => { $('settings').hidden = true; };
 $('resetBtn').onclick = () => {
@@ -886,15 +1165,14 @@ $('resetBtn').onclick = () => {
     return;
   }
   try { localStorage.removeItem(SAVE_KEY); } catch {}
-  S = fresh(); world.innerHTML = ''; walkers = 0;
-  buildEntrance(); ORDER.forEach((k, i) => buildPen(k, i + 1));
-  $('settings').hidden = true; renderAll(); goTo(0, false); save();
+  S = fresh(); buildWorld();
+  $('settings').hidden = true; renderAll(); goTo(ENTRANCE, false); save();
   delete b.dataset.armed; b.textContent = '처음부터 다시 하기';
 };
 
 setInterval(() => {
   S.booth = Math.min(boothCap(), S.booth + rate());
-  renderBooth();
+  renderBooth(); tickExpedition();
 }, 1000);
 setInterval(spawnVisitor, 1600);
 for (let i = 0; i < 4; i++) setTimeout(spawnVisitor, i * 500);
